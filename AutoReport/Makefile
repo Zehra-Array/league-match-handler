@@ -1,0 +1,9 @@
+CXXFLAGS = -fPIC -frtti -I../../include -I../../src/bzfs -O
+LDLIBS = -ldl
+all : AutoReport.so
+AutoReport.o : autoReport.cpp
+		$(CXX) $(CXXFLAGS) -c -o $@  $^ 
+AutoReport.so : AutoReport.o
+		$(CXX) $(CXXFLAGS) -shared -rdynamic $^ -o $@
+clean :
+		-rm *.so *.o
