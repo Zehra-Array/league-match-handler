@@ -22,6 +22,7 @@ echo "creating tables ..."
 ../sql < create_themes.sql
 ../sql < create_smiley.sql
 ../sql < create_permissions.sql
+../sql < create_autoreport.sql
 
 echo "creating admin player with password of 'admin'"
 echo " CHANGE THE PASSWORD with the 'profile' webpage"

@@ -151,6 +151,7 @@ $sectionInfo = array(
   'seasons' =>    array ('Seasons'),
   'season' =>    array ('Season Standings'),
   'addseason' => array ('Manage Season'),
+  'autoreport' =>     array ('Autoreport', 'autoreport.php'),
 );
 
 
@@ -208,6 +209,7 @@ function adminMenu (){
     array ('permissions::permissions', 'Roles', 'permissions','func=roles'),
     array ('createaccount::create_account', 'Create Acct', 'createaccount'),
     array ('addseason::add_season', 'Seasons', 'addseason'),
+    array ('autoreport::ipfilter', 'Filter ips', 'autoreport'),
   );
   $colCount=0;
   $out = '<TABLE class=admback width=100%><TR><TD>';
