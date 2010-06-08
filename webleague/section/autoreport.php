@@ -46,7 +46,7 @@ function section_autoreport_autoreport () {
             echo '<input type=hidden name=link value=autoreport>';
             echo '<input type=hidden name=action value=add>';
             echo '<center><table>';
-            echo '<TR><TD align=right  > <b>Descripttion (optional) : &nbsp; </b></td> <TD><INPUT type=text name=description size=40 maxlength=40  ></td></tr>';
+            echo '<TR><TD align=right  > <b>Description (optional) : &nbsp; </b></td> <TD><INPUT type=text name=description size=40 maxlength=40  ></td></tr>';
             echo '<TR><TD align=right  > <b>Host name : &nbsp; </b></td> <TD><INPUT type=text name=hostname size=40 maxlength=40  ></td></tr>';
             echo '<TR><TD align=right  > <b>Hash string : &nbsp; </b></td> <TD><INPUT type=text name=hash size=40 maxlength=40  ></td></tr>';
             echo '</table><br>'. htmlFormButton ('Submit', 'f_ok_x') . '&nbsp;&nbsp;' . htmlFormButton ('Cancel', 'f_cancel_x', CLRBUT) .'</center>';
