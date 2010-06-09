@@ -5,8 +5,6 @@
 #include <iostream>
 #include "TextUtils.h"
 #include <string.h>
-#include "GameKeeper.h"
-#include "bzfs.h"
 /* experimental plugin by Murielle Darc */
 
 bool official = false;
@@ -19,8 +17,7 @@ int eTeamA;
 int eTeamB;
 int scoreA;
 int scoreB;
-extern uint16_t curMaxPlayers;
-extern TeamInfo team[NumTeams];
+
 BZ_GET_PLUGIN_VERSION
 
 class MyURLHandler: public bz_URLHandler
