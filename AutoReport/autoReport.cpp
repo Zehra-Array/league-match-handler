@@ -5,8 +5,6 @@
 #include <iostream>
 #include "TextUtils.h"
 #include <string.h>
-#include "TimeKeeper.h"
-#include "CmdLineOptions.h"
 #include "GameKeeper.h"
 #include "bzfs.h"
 /* experimental plugin by Murielle Darc */
@@ -21,8 +19,6 @@ int eTeamA;
 int eTeamB;
 int scoreA;
 int scoreB;
-extern CmdLineOptions *clOptions;
-extern TimeKeeper gameStartTime;
 extern uint16_t curMaxPlayers;
 extern TeamInfo team[NumTeams];
 BZ_GET_PLUGIN_VERSION
@@ -118,6 +114,13 @@ MyURLHandler myURL;
 
 class AutoReport : public bz_EventHandler, public bz_CustomSlashCommandHandler
 {
+
+private: 
+
+    float saveTimeLimit;
+    double matchStartTime;
+    double matchEndTime;
+
 public:
 
     std::string encryptdata ( bzApiString data)
@@ -167,12 +170,27 @@ public:
             bz_freePlayerRecord(player);
             return;
         }
+
+        if (eventData->eventType == bz_eGameStartEvent)
+	{
+	  // save currently set timelimit to avoid collisions with other plugins that 
+	  // manipulate the timelimit
+
+	  saveTimeLimit = bz_getTimeLimit();
+	  matchStartTime = bz_getCurrentTime();
+
+	}
+
         if (eventData->eventType == bz_eGameEndEvent)
         {
             if (!official) return;
-            TimeKeeper tm = TimeKeeper::getCurrent();
-            float newTimeElapsed = (float)(tm - gameStartTime);
-            float timeLeft = clOptions->timeLimit - newTimeElapsed;
+
+	    matchEndTime = bz_getCurrentTime();
+	    double newTimeElapsed = matchEndTime - matchStartTime;
+            float timeLeft = saveTimeLimit - newTimeElapsed;
+
+            bz_debugMessagef(2, "DEBUG:: newTimeElapsed => %f timeLeft => %f",newTimeElapsed, timeLeft);
+
             if (timeLeft>0) {
                 bz_sendTextMessage(BZ_SERVER,BZ_ALLUSERS,"/gameover before the end of the match !!! Official is canceled...");
                 official = false;
@@ -280,8 +298,6 @@ public:
 
     }
 
-
-
 };
 
 AutoReport autoReport;
@@ -292,6 +308,7 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
     URL = commandLine;
     bz_registerEvent(bz_eCaptureEvent,&autoReport);
     bz_registerEvent(bz_ePlayerSpawnEvent,&autoReport);
+    bz_registerEvent(bz_eGameStartEvent,&autoReport);
     bz_registerEvent(bz_eGameEndEvent,&autoReport);
     bz_registerCustomSlashCommand ( "cancel", &autoReport  );
     bz_registerCustomSlashCommand ( "official" , &autoReport );
@@ -305,6 +322,7 @@ BZF_PLUGIN_CALL int bz_Unload (void)
     bz_removeCustomSlashCommand ( "official" );
     bz_removeCustomSlashCommand ( "cancel" );
     bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);// for controlling who is joining during game for protecting the match
+    bz_removeEvent(bz_eGameStartEvent,&autoReport);// for counting time at end of game if a gameover occured
     bz_removeEvent(bz_eGameEndEvent,&autoReport);// for counting time at end of game if a gameover occured
     bz_removeEvent(bz_eCaptureEvent,&autoReport);// for counting time at end of game if a gameover occured
     bz_debugMessage(4, "autoReport Plugin Unloaded");
