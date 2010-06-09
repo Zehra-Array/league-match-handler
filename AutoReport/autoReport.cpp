@@ -184,7 +184,7 @@ public:
 
 	    matchEndTime = bz_getCurrentTime();
 	    double newTimeElapsed = matchEndTime - matchStartTime;
-            float timeLeft = saveTimeLimit - newTimeElapsed;
+            float timeLeft = saveTimeLimit - newTimeElapsed - 1;
 
             bz_debugMessagef(2, "DEBUG:: newTimeElapsed => %f timeLeft => %f",newTimeElapsed, timeLeft);
 
