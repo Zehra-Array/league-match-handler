@@ -117,8 +117,21 @@ private:
     float saveTimeLimit;
     double matchStartTime;
     double matchEndTime;
+    double pauseStartTime;
+    double pauseEndTime;
+    bool pauseState;
 
 public:
+
+    AutoReport()
+    {
+         saveTimeLimit=0;
+	 matchStartTime=0;
+	 matchEndTime=0;
+	 pauseStartTime=0;
+	 pauseEndTime=0;
+	 pauseState=false;
+    }
 
     std::string encryptdata ( bzApiString data)
     {
@@ -151,7 +164,6 @@ public:
 
     }
 
-
     virtual void process ( bz_EventData *eventData )
     {
         if (eventData->eventType == bz_ePlayerSpawnEvent)
@@ -168,6 +180,33 @@ public:
             return;
         }
 
+        if (eventData->eventType == bz_eSlashCommandEvent )
+	{
+            if (!official) return;
+
+            bz_SlashCommandEventData *SlashCommandData = (bz_SlashCommandEventData *) eventData;
+
+	    bzAPIStringList msg;
+	    msg.tokenize(SlashCommandData->message.c_str()," ",2);
+
+	    if (msg.size() == 2 &&  msg.get(0) == "/countdown" &&  bz_hasPerm(SlashCommandData->from, "COUNTDOWN"))
+	    {
+		if ( msg.get(1)  == "pause" && !pauseState ) {
+		  pauseStartTime = bz_getCurrentTime();
+		  //bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"debug:: pause - %f", pauseStartTime);
+		  pauseState=true;
+		}
+		else if ( msg.get(1)  == "resume" && pauseState ) {
+		  pauseEndTime = bz_getCurrentTime();
+		  if ( bz_getBZDBString("_countdownResumeDelay").size() )
+		    pauseEndTime += atoi(bz_getBZDBString("_countdownResumeDelay").c_str());
+
+		  //bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"debug:: resume - %f - %f", bz_getCurrentTime(), pauseEndTime);
+		  pauseState=false;
+		}
+	    }
+	}
+
         if (eventData->eventType == bz_eGameStartEvent)
 	{
 	  // save currently set timelimit to avoid collisions with other plugins that 
@@ -183,7 +222,7 @@ public:
             if (!official) return;
 
 	    matchEndTime = bz_getCurrentTime();
-	    double newTimeElapsed = matchEndTime - matchStartTime;
+	    double newTimeElapsed = (matchEndTime - matchStartTime) + (pauseEndTime - pauseStartTime);
             float timeLeft = saveTimeLimit - newTimeElapsed - 1;
 
             bz_debugMessagef(2, "DEBUG:: newTimeElapsed => %f timeLeft => %f",newTimeElapsed, timeLeft);
@@ -307,6 +346,7 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
     bz_registerEvent(bz_ePlayerSpawnEvent,&autoReport);
     bz_registerEvent(bz_eGameStartEvent,&autoReport);
     bz_registerEvent(bz_eGameEndEvent,&autoReport);
+    bz_registerEvent(bz_eSlashCommandEvent,&autoReport);
     bz_registerCustomSlashCommand ( "cancel", &autoReport  );
     bz_registerCustomSlashCommand ( "official" , &autoReport );
     bz_debugMessage(4, "autoReport Plugin loaded");
@@ -322,6 +362,7 @@ BZF_PLUGIN_CALL int bz_Unload (void)
     bz_removeEvent(bz_eGameStartEvent,&autoReport);// for counting time at end of game if a gameover occured
     bz_removeEvent(bz_eGameEndEvent,&autoReport);// for counting time at end of game if a gameover occured
     bz_removeEvent(bz_eCaptureEvent,&autoReport);// for counting time at end of game if a gameover occured
+    bz_removeEvent(bz_eSlashCommandEvent,&autoReport);// for counting time at end of game if a gameover occured
     bz_debugMessage(4, "autoReport Plugin Unloaded");
     return 0;
 }
