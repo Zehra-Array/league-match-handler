@@ -126,7 +126,7 @@ if ($action == "entermatch") {
     $obj = mysql_fetch_object($res);
     $ISOK=false;
     if ($obj->hostname != "") {
-        if (gethostbyname($obj->hostname)==$remoteip) $IOK=true;
+        if (gethostbyname($obj->hostname)==$remoteip) $ISOK=true;
     }
     if ($ISOK) {
         $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
@@ -146,7 +146,7 @@ if ($action == "entermatch") {
         echo  "$teama  $scorea - $scoreb  $teamb\n$teama => $newa ". (($vara>=0) ? "(+$vara)" : "($vara)")."\n$teamb => $newb ". (($varb>=0) ? "(+$varb)" : "($varb)") ;
 
     }
-    else echo  "The match has not been reported\nIt seems this server has not received the authorizations\nfor such an operation on the league ...") ;
+    else echo  "The match has not been reported\nIt seems this server has not received the authorizations\nfor such an operation on the league ...";
     }
 
 function entermatch_postIt ($teamA,$teamB,$scoreA,$scoreB, $tsActUnix) {

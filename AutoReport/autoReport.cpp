@@ -10,6 +10,7 @@
 bool official = false;
 bool isTeamcoloridentified=false;
 bool isofficialrequested=false;
+bool isloaded=false;
 std::string URL;
 std::string HASH;
 std::string TeamA;
@@ -147,7 +148,7 @@ public:
         return data1;
 
     }
-    std::string encryptdata ( String data)
+    std::string encryptdata ( std::string data)
     {
         char hex[5];
         std::string data1;
@@ -362,7 +363,7 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
     isloaded=false;
     if (tokens.size() == 2) {
         URL = tokens[0];
-        HASH = tokes[1];
+        HASH = tokens[1];
         bz_registerEvent(bz_eCaptureEvent,&autoReport);
         bz_registerEvent(bz_ePlayerSpawnEvent,&autoReport);
         bz_registerEvent(bz_eGameStartEvent,&autoReport);
