@@ -11,6 +11,7 @@ bool official = false;
 bool isTeamcoloridentified=false;
 bool isofficialrequested=false;
 std::string URL;
+std::string HASH;
 std::string TeamA;
 std::string TeamB;
 int eTeamA;
@@ -112,7 +113,7 @@ MyURLHandler myURL;
 class AutoReport : public bz_EventHandler, public bz_CustomSlashCommandHandler
 {
 
-private: 
+private:
 
     float saveTimeLimit;
     double matchStartTime;
@@ -121,6 +122,19 @@ private:
 public:
 
     std::string encryptdata ( bzApiString data)
+    {
+        char hex[5];
+        std::string data1;
+        for (int i=0;  i < (int) data.size(); i++) {
+            char c = data.c_str()[i];
+            data1+='%';
+            sprintf(hex, "%-2.2X", c);
+            data1.append(hex);
+        }
+        return data1;
+
+    }
+    std::string encryptdata ( String data)
     {
         char hex[5];
         std::string data1;
@@ -169,21 +183,21 @@ public:
         }
 
         if (eventData->eventType == bz_eGameStartEvent)
-	{
-	  // save currently set timelimit to avoid collisions with other plugins that 
-	  // manipulate the timelimit
+        {
+            // save currently set timelimit to avoid collisions with other plugins that
+            // manipulate the timelimit
 
-	  saveTimeLimit = bz_getTimeLimit();
-	  matchStartTime = bz_getCurrentTime();
+            saveTimeLimit = bz_getTimeLimit();
+            matchStartTime = bz_getCurrentTime();
 
-	}
+        }
 
         if (eventData->eventType == bz_eGameEndEvent)
         {
             if (!official) return;
 
-	    matchEndTime = bz_getCurrentTime();
-	    double newTimeElapsed = matchEndTime - matchStartTime;
+            matchEndTime = bz_getCurrentTime();
+            double newTimeElapsed = matchEndTime - matchStartTime;
             float timeLeft = saveTimeLimit - newTimeElapsed - 1;
 
             bz_debugMessagef(2, "DEBUG:: newTimeElapsed => %f timeLeft => %f",newTimeElapsed, timeLeft);
@@ -208,7 +222,8 @@ public:
             bz_addURLJob(URL.c_str(), &myURL, ("&action=entermatch&teama="+encryptdata(TeamA)
                                                +"&teamb=" + encryptdata(TeamB)
                                                +"&scorea="+ encryptdata(scoreA)
-                                               +"&scoreb="+ encryptdata(scoreB)).c_str());
+                                               +"&scoreb="+ encryptdata(scoreB)
+                                               +"&hash=" + encryptdata(HASH)).c_str());
             official = false;
             isTeamcoloridentified=false;
             isofficialrequested=false;
@@ -301,28 +316,35 @@ AutoReport autoReport;
 
 BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
 {
-    bz_debugMessage(4, "autoReport Plugin Loaded");
-    URL = commandLine;
-    bz_registerEvent(bz_eCaptureEvent,&autoReport);
-    bz_registerEvent(bz_ePlayerSpawnEvent,&autoReport);
-    bz_registerEvent(bz_eGameStartEvent,&autoReport);
-    bz_registerEvent(bz_eGameEndEvent,&autoReport);
-    bz_registerCustomSlashCommand ( "cancel", &autoReport  );
-    bz_registerCustomSlashCommand ( "official" , &autoReport );
-    bz_debugMessage(4, "autoReport Plugin loaded");
+    std::vector<std::string> tokens = TextUtils::tokenize(commandLine,std::string(","),0,false);
+
+    isloaded=false;
+    if (tokens.size() == 2) {
+        URL = tokens[0];
+        HASH = tokes[1];
+        bz_registerEvent(bz_eCaptureEvent,&autoReport);
+        bz_registerEvent(bz_ePlayerSpawnEvent,&autoReport);
+        bz_registerEvent(bz_eGameStartEvent,&autoReport);
+        bz_registerEvent(bz_eGameEndEvent,&autoReport);
+        bz_registerCustomSlashCommand ( "cancel", &autoReport  );
+        bz_registerCustomSlashCommand ( "official" , &autoReport );
+        bz_debugMessage(4, "autoReport Plugin loaded");
+        isloaded=true;
+    }
     return 0;
 }
 
 BZF_PLUGIN_CALL int bz_Unload (void)
 {
-
-    bz_removeCustomSlashCommand ( "official" );
-    bz_removeCustomSlashCommand ( "cancel" );
-    bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);// for controlling who is joining during game for protecting the match
-    bz_removeEvent(bz_eGameStartEvent,&autoReport);// for counting time at end of game if a gameover occured
-    bz_removeEvent(bz_eGameEndEvent,&autoReport);// for counting time at end of game if a gameover occured
-    bz_removeEvent(bz_eCaptureEvent,&autoReport);// for counting time at end of game if a gameover occured
-    bz_debugMessage(4, "autoReport Plugin Unloaded");
+    if (isloaded) {
+        bz_removeCustomSlashCommand ( "official" );
+        bz_removeCustomSlashCommand ( "cancel" );
+        bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);// for controlling who is joining during game for protecting the match
+        bz_removeEvent(bz_eGameStartEvent,&autoReport);// for counting time at end of game if a gameover occured
+        bz_removeEvent(bz_eGameEndEvent,&autoReport);// for counting time at end of game if a gameover occured
+        bz_removeEvent(bz_eCaptureEvent,&autoReport);// for counting time at end of game if a gameover occured
+        bz_debugMessage(4, "autoReport Plugin Unloaded");
+    }
     return 0;
 }
 

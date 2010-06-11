@@ -114,27 +114,40 @@ if ($action == "spawn") {
 }
 
 if ($action == "entermatch") {
-     echo "entermatch\n";
+    echo "entermatch\n";
     $teamb=$_POST['teamb'];
     $teama=$_POST['teama'];
     $scoreb=$_POST['scoreb'];
     $scorea=$_POST['scorea'];
-    $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
-                       FROM  l_team T WHERE T.name = \"$teama\"");
+    $hash=$_POST['hash'];
+    $remoteip=gethostbyname(gethostbyaddr($_SERVER["REMOTE_ADDR"]));
+    $res = mysql_query("SELECT A.hostname hostname
+                       FROM  l_autoreport A WHERE A.hash = \"$hash\"");
     $obj = mysql_fetch_object($res);
-    $idteama = $obj->team_id;
-    $zeloa = $obj->score;
-    $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
-                       FROM  l_team T WHERE T.name = \"$teamb\"");
-    $obj = mysql_fetch_object($res);
-    $idteamb = $obj->team_id;
-    $zelob = $obj->score;
-    section_entermatch_calculateRating ($scorea, $scoreb, $zeloa , $zelob, &$newa, &$newb);
-    entermatch_postIt ($idteama, $idteamb,$scorea,$scoreb, time());
-    $vara=$newa-$zeloa;
-    $varb=$newb-$zelob;
-    echo  "$teama  $scorea - $scoreb  $teamb\n$teama => $newa ". (($vara>=0) ? "(+$vara)" : "($vara)")."\n$teamb => $newb ". (($varb>=0) ? "(+$varb)" : "($varb)") ;
-}
+    $ISOK=false;
+    if ($obj->hostname != "") {
+        if (gethostbyname($obj->hostname)==$remoteip) $IOK=true;
+    }
+    if ($ISOK) {
+        $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
+                           FROM  l_team T WHERE T.name = \"$teama\"");
+        $obj = mysql_fetch_object($res);
+        $idteama = $obj->team_id;
+        $zeloa = $obj->score;
+        $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
+                           FROM  l_team T WHERE T.name = \"$teamb\"");
+        $obj = mysql_fetch_object($res);
+        $idteamb = $obj->team_id;
+        $zelob = $obj->score;
+        section_entermatch_calculateRating ($scorea, $scoreb, $zeloa , $zelob, &$newa, &$newb);
+        entermatch_postIt ($idteama, $idteamb,$scorea,$scoreb, time());
+        $vara=$newa-$zeloa;
+        $varb=$newb-$zelob;
+        echo  "$teama  $scorea - $scoreb  $teamb\n$teama => $newa ". (($vara>=0) ? "(+$vara)" : "($vara)")."\n$teamb => $newb ". (($varb>=0) ? "(+$varb)" : "($varb)") ;
+
+    }
+    else echo  "The match has not been reported\nIt seems this server has not received the authorizations\nfor such an operation on the league ...") ;
+    }
 
 function entermatch_postIt ($teamA,$teamB,$scoreA,$scoreB, $tsActUnix) {
 
