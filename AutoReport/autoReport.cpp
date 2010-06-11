@@ -18,7 +18,7 @@ int eTeamA;
 int eTeamB;
 int scoreA;
 int scoreB;
-
+double pauseTotalTime;
 BZ_GET_PLUGIN_VERSION
 
 class MyURLHandler: public bz_URLHandler
@@ -126,12 +126,12 @@ public:
 
     AutoReport()
     {
-         saveTimeLimit=0;
-	 matchStartTime=0;
-	 matchEndTime=0;
-	 pauseStartTime=0;
-	 pauseEndTime=0;
-	 pauseState=false;
+        saveTimeLimit=0;
+        matchStartTime=0;
+        matchEndTime=0;
+        pauseStartTime=0;
+        pauseEndTime=0;
+        pauseState=false;
     }
 
     std::string encryptdata ( bzApiString data)
@@ -195,37 +195,39 @@ public:
         }
 
         if (eventData->eventType == bz_eSlashCommandEvent )
-	{
+        {
             if (!official) return;
 
             bz_SlashCommandEventData *SlashCommandData = (bz_SlashCommandEventData *) eventData;
 
-	    bzAPIStringList msg;
-	    msg.tokenize(SlashCommandData->message.c_str()," ",2);
+            bzAPIStringList msg;
+            msg.tokenize(SlashCommandData->message.c_str()," ",2);
 
-	    if (msg.size() == 2 &&  msg.get(0) == "/countdown" &&  bz_hasPerm(SlashCommandData->from, "COUNTDOWN"))
-	    {
-		if ( msg.get(1)  == "pause" && !pauseState ) {
-		  pauseStartTime = bz_getCurrentTime();
-		  //bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"debug:: pause - %f", pauseStartTime);
-		  pauseState=true;
-		}
-		else if ( msg.get(1)  == "resume" && pauseState ) {
-		  pauseEndTime = bz_getCurrentTime();
-		  if ( bz_getBZDBString("_countdownResumeDelay").size() )
-		    pauseEndTime += atoi(bz_getBZDBString("_countdownResumeDelay").c_str());
+            if (msg.size() == 2 &&  msg.get(0) == "/countdown" &&  bz_hasPerm(SlashCommandData->from, "COUNTDOWN"))
+            {
+                if ( msg.get(1)  == "pause" && !pauseState ) {
+                    pauseStartTime = bz_getCurrentTime();
+                    //bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"debug:: pause - %f", pauseStartTime);
+                    pauseState=true;
+                }
+                else if ( msg.get(1)  == "resume" && pauseState ) {
+                    pauseEndTime = bz_getCurrentTime();
+                    if ( bz_getBZDBString("_countdownResumeDelay").size() ) {
+                        pauseEndTime = atoi(bz_getBZDBString("_countdownResumeDelay").c_str());
+                        pauseTotalTime += pauseEndTime - pauseStartTime;
+                    }
 
-		  //bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"debug:: resume - %f - %f", bz_getCurrentTime(), pauseEndTime);
-		  pauseState=false;
-		}
-	    }
-	}
+                    //bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"debug:: resume - %f - %f", bz_getCurrentTime(), pauseEndTime);
+                    pauseState=false;
+                }
+            }
+        }
 
         if (eventData->eventType == bz_eGameStartEvent)
         {
             // save currently set timelimit to avoid collisions with other plugins that
             // manipulate the timelimit
-
+            pauseTotalTime = 0.0f;
             saveTimeLimit = bz_getTimeLimit();
             matchStartTime = bz_getCurrentTime();
 
@@ -234,10 +236,10 @@ public:
         if (eventData->eventType == bz_eGameEndEvent)
         {
             if (!official) return;
- 
-	    matchEndTime = bz_getCurrentTime();
-	    double newTimeElapsed = (matchEndTime - matchStartTime) + (pauseEndTime - pauseStartTime); 
-            float timeLeft = saveTimeLimit - newTimeElapsed - 1;
+
+            matchEndTime = bz_getCurrentTime();
+            double newTimeElapsed = (matchEndTime - matchStartTime);
+            float timeLeft = saveTimeLimit - newTimeElapsed - 1 + pauseTotalTime;
 
             bz_debugMessagef(2, "DEBUG:: newTimeElapsed => %f timeLeft => %f",newTimeElapsed, timeLeft);
 
@@ -354,7 +356,7 @@ public:
 AutoReport autoReport;
 
 BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
-{ 
+{
     std::vector<std::string> tokens = TextUtils::tokenize(commandLine,std::string(","),0,false);
 
     isloaded=false;
@@ -365,27 +367,27 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
         bz_registerEvent(bz_ePlayerSpawnEvent,&autoReport);
         bz_registerEvent(bz_eGameStartEvent,&autoReport);
         bz_registerEvent(bz_eGameEndEvent,&autoReport);
-    bz_registerEvent(bz_eSlashCommandEvent,&autoReport);
+        bz_registerEvent(bz_eSlashCommandEvent,&autoReport);
         bz_registerCustomSlashCommand ( "cancel", &autoReport  );
         bz_registerCustomSlashCommand ( "official" , &autoReport );
         bz_debugMessage(4, "autoReport Plugin loaded");
         isloaded=true;
-    } 
+    }
     return 0;
 }
 
 BZF_PLUGIN_CALL int bz_Unload (void)
-{ 
+{
     if (isloaded) {
         bz_removeCustomSlashCommand ( "official" );
         bz_removeCustomSlashCommand ( "cancel" );
-        bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);// for controlling who is joining during game for protecting the match
-        bz_removeEvent(bz_eGameStartEvent,&autoReport);// for counting time at end of game if a gameover occured
-        bz_removeEvent(bz_eGameEndEvent,&autoReport);// for counting time at end of game if a gameover occured
-        bz_removeEvent(bz_eCaptureEvent,&autoReport);// for counting time at end of game if a gameover occured
-    bz_removeEvent(bz_eSlashCommandEvent,&autoReport);// for counting time at end of game if a gameover occured
+        bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);
+        bz_removeEvent(bz_eGameStartEvent,&autoReport);
+        bz_removeEvent(bz_eGameEndEvent,&autoReport);
+        bz_removeEvent(bz_eCaptureEvent,&autoReport);
+        bz_removeEvent(bz_eSlashCommandEvent,&autoReport);
         bz_debugMessage(4, "autoReport Plugin Unloaded");
-    } 
+    }
     return 0;
 }
 
