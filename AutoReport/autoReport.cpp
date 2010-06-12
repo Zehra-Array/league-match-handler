@@ -19,7 +19,6 @@ int eTeamA;
 int eTeamB;
 int scoreA;
 int scoreB;
-double pauseTotalTime;
 BZ_GET_PLUGIN_VERSION
 
 class MyURLHandler: public bz_URLHandler
@@ -122,6 +121,7 @@ private:
     double pauseStartTime;
     double pauseEndTime;
     bool pauseState;
+    double pauseTotalTime;
 
 public:
 
@@ -133,6 +133,7 @@ public:
         pauseStartTime=0;
         pauseEndTime=0;
         pauseState=false;
+    	pauseTotalTime=0;
     }
 
     std::string encryptdata ( bzApiString data)
@@ -215,10 +216,10 @@ public:
                     pauseEndTime = bz_getCurrentTime();
                     if ( bz_getBZDBString("_countdownResumeDelay").size() ) {
                         pauseEndTime = atoi(bz_getBZDBString("_countdownResumeDelay").c_str());
-                        pauseTotalTime += pauseEndTime - pauseStartTime;
                     }
 
                     //bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"debug:: resume - %f - %f", bz_getCurrentTime(), pauseEndTime);
+                    pauseTotalTime += pauseEndTime - pauseStartTime;
                     pauseState=false;
                 }
             }
@@ -226,6 +227,8 @@ public:
 
         if (eventData->eventType == bz_eGameStartEvent)
         {
+            if (!official) return;
+
             // save currently set timelimit to avoid collisions with other plugins that
             // manipulate the timelimit
             pauseTotalTime = 0.0f;
@@ -273,6 +276,7 @@ public:
             TeamB="";
             return;
         }
+
         if ((eventData->eventType == bz_eCaptureEvent) && (!isTeamcoloridentified))
         {
             bz_CTFCaptureEventData *CTFCaptureData = (bz_CTFCaptureEventData *) eventData;
@@ -391,7 +395,4 @@ BZF_PLUGIN_CALL int bz_Unload (void)
     }
     return 0;
 }
-
-
-
 
