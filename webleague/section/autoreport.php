@@ -19,13 +19,13 @@ function section_autoreport_autoreport () {
     if (isFuncAllowed('autoreport::ipfilter')) {
 
         if ($_POST['action'] == 'add' && $_POST['f_ok_x']=='Submit' ) {
-            sqlQuery ('insert into l_autoreport (description,hostname, hash) VALUES("'.$_POST['description'].'", "'.$_POST['hostname'].'", "'. $_POST['hash'].'")' );
+            sqlQuery ('insert into l_autoreport (description,hostname, hash) VALUES("'.mysql_real_escape_string($_POST['description']).'", "'.mysql_real_escape_string($_POST['hostname']).'", "'. mysql_real_escape_string($_POST['hash']).'")' );
         }
         if ($_POST['action'] == 'edit' && $_POST['f_ok_x']=='Submit' ) {
-            sqlQuery ('UPDATE  l_autoreport  SET description = "'.$_POST['description'] .'", hostname = "'.$_POST['hostname'] .'", hash = "'.$_POST['hash'].'" WHERE id="'. $_POST['id'].'"');
+            sqlQuery ('UPDATE  l_autoreport  SET description = "'.mysql_real_escape_string($_POST['description']) .'", hostname = "'.mysql_real_escape_string($_POST['hostname']) .'", hash = "'.mysql_real_escape_string($_POST['hash']).'" WHERE id="'. mysql_real_escape_string($_POST['id']).'"');
         }
         if ($_GET['action']=="remove") { 
-              sqlQuery ('DELETE FROM  l_autoreport WHERE id='.$_GET['id']); 
+              sqlQuery ('DELETE FROM  l_autoreport WHERE id='.mysql_real_escape_string($_GET['id'])); 
               unset($_GET['action']);
         } 
 

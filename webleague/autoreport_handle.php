@@ -18,8 +18,8 @@ if (isset($_POST['action'])) {
 
 if ($action == "challenger") {
     echo "challenger\n";
-    $teama=$_POST['teama'];
-    $data=$_POST['data'];
+    $teama=mysql_real_escape_string($_POST['teama']);
+    $data=mysql_real_escape_string($_POST['data']);
     if ($teama==""||$data=="") {
         echo "NOTEAM\nWe failed to declare a match with this player";
         return;
@@ -33,15 +33,15 @@ if ($action == "challenger") {
         echo "NOTEAM\n$data does not belong to any team and tried to declare a match ?!";
         return;
     }
-    else  echo "TEAMFOUND\n$teama\n".$obj->teamname."\n$data has  declared that the team ".$obj->teamname." will play an official match too.
-        \nThe match will be $teama versus ".$obj->teamname."\nThis match can still be canceled by using command /cancel";
+    else  echo "TEAMFOUND\n$teama\n".mysql_real_escape_string($obj->teamname)."\n$data has  declared that the team ".mysql_real_escape_string($obj->teamname)." will play an official match too.
+        \nThe match will be $teama versus ".mysql_real_escape_string($obj->teamname)."\nThis match can still be canceled by using command /cancel";
 
     return;
 }
 
 if ($action == "firstdeclare") {
     echo "firstdeclare\n";
-    $data=$_POST['data'];
+    $data=mysql_real_escape_string($_POST['data']);
     if ($data=="") {
         echo "NOTEAM\nWe failed to declare a match with this player";
         return;
@@ -55,15 +55,15 @@ if ($action == "firstdeclare") {
         echo "NOTEAM\n$data does not belong to any team and tried to declare a match ?!";
         return;
     }
-    else  echo "TEAMFOUND\n".$obj->teamname."\n$data has  declared that the team ".$obj->teamname." will play an official match.\n".$obj->teamname." is waiting for a challenger !!";
+    else  echo "TEAMFOUND\n".mysql_real_escape_string($obj->teamname)."\n$data has  declared that the team ".mysql_real_escape_string($obj->teamname)." will play an official match.\n".mysql_real_escape_string($obj->teamname)." is waiting for a challenger !!";
     return;
 }
 
 if ($action == "identTeam") {
     echo "identTeam\n";
-    $player=$_POST['player'];
-    $playerteam=$_POST['playerteam'];
-    $teama=$_POST['teama'];
+    $player=mysql_real_escape_string($_POST['player']);
+    $playerteam=mysql_real_escape_string($_POST['playerteam']);
+    $teama=mysql_real_escape_string($_POST['teama']);
 
     if ($player=="" || $playerteam=="" ||$teama=="") {
         echo "NOTEAM";
@@ -88,10 +88,10 @@ if ($action == "identTeam") {
 
 if ($action == "spawn") {
     echo "spawn\n";
-    $player=$_POST['player'];
-    $teamb=$_POST['teamb'];
-    $teama=$_POST['teama'];
-    $playerid=$_POST['playerid'];
+    $player=mysql_real_escape_string($_POST['player']);
+    $teamb=mysql_real_escape_string($_POST['teamb']);
+    $teama=mysql_real_escape_string($_POST['teama']);
+    $playerid=mysql_real_escape_string($_POST['playerid']);
     if ($player=="" || $teamb=="" ||$teama=="" || $playerid=="" ) {
         echo "ERROR";
         return;
@@ -115,11 +115,11 @@ if ($action == "spawn") {
 
 if ($action == "entermatch") {
     echo "entermatch\n";
-    $teamb=$_POST['teamb'];
-    $teama=$_POST['teama'];
-    $scoreb=$_POST['scoreb'];
-    $scorea=$_POST['scorea'];
-    $hash=$_POST['hash'];
+    $teamb=mysql_real_escape_string($_POST['teamb']);
+    $teama=mysql_real_escape_string($_POST['teama']);
+    $scoreb=mysql_real_escape_string($_POST['scoreb']);
+    $scorea=mysql_real_escape_string($_POST['scorea']);
+    $hash=mysql_real_escape_string($_POST['hash']);
     $remoteip=gethostbyname(gethostbyaddr($_SERVER["REMOTE_ADDR"]));
     $res = mysql_query("SELECT A.hostname hostname
                        FROM  l_autoreport A WHERE A.hash = \"$hash\"");
