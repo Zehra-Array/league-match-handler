@@ -19,6 +19,9 @@ int eTeamA;
 int eTeamB;
 int scoreA;
 int scoreB;
+bool isGameRunning=false;
+double lasttick;
+double ruletime;
 BZ_GET_PLUGIN_VERSION
 
 class MyURLHandler: public bz_URLHandler
@@ -133,7 +136,7 @@ public:
         pauseStartTime=0;
         pauseEndTime=0;
         pauseState=false;
-    	pauseTotalTime=0;
+        pauseTotalTime=0;
     }
 
     std::string encryptdata ( bzApiString data)
@@ -182,6 +185,17 @@ public:
 
     virtual void process ( bz_EventData *eventData )
     {
+        if (eventData->eventType == bz_eTickEvent)
+        {
+            if (!official || !isGameRunning) return;
+            int nb_Green = bz_getTeamCount(eGreenTeam);
+            int nb_Red = bz_getTeamCount(eRedTeam);
+            bz_TickEventData *PlayerTickData = (bz_TickEventData *) eventData;
+            double newtick=PlayerTickData->time;
+            if ( nb_Green > 1 && nb_Red >1 )   ruletime += newtick-lasttick;
+            lasttick = newtick;
+            return;
+        }
         if (eventData->eventType == bz_ePlayerSpawnEvent)
         {
             if (!official) return;
@@ -231,19 +245,23 @@ public:
 
             // save currently set timelimit to avoid collisions with other plugins that
             // manipulate the timelimit
+            isGameRunning=true;
+            ruletime=0.0f;
             pauseTotalTime = 0.0f;
             saveTimeLimit = bz_getTimeLimit();
             matchStartTime = bz_getCurrentTime();
+            lasttick=matchStartTime;
 
         }
 
         if (eventData->eventType == bz_eGameEndEvent)
         {
             if (!official) return;
-
+            isGameRunning=false;
             matchEndTime = bz_getCurrentTime();
             double newTimeElapsed = (matchEndTime - matchStartTime);
             float timeLeft = saveTimeLimit - newTimeElapsed - 1 + pauseTotalTime;
+            double TotalRuleTime = ruletime - pauseTotalTime;
 
             bz_debugMessagef(2, "DEBUG:: newTimeElapsed => %f timeLeft => %f",newTimeElapsed, timeLeft);
 
@@ -256,6 +274,16 @@ public:
                 TeamB="";
                 return;
             }
+            if (TotalRuleTime < 0.9*saveTimeLimit) {
+                bz_sendTextMessage(BZ_SERVER,BZ_ALLUSERS,"The rules of league have not been sufficiently satisfied. Official is canceled...");
+                official = false;
+                isTeamcoloridentified=false;
+                isofficialrequested=false;
+                TeamA="";
+                TeamB="";
+                return;
+            }
+           
             if (!isTeamcoloridentified) {
                 scoreA = 0;
                 scoreB = 0;
@@ -371,8 +399,9 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
         bz_registerEvent(bz_eCaptureEvent,&autoReport);
         bz_registerEvent(bz_ePlayerSpawnEvent,&autoReport);
         bz_registerEvent(bz_eGameStartEvent,&autoReport);
-        bz_registerEvent(bz_eGameEndEvent,&autoReport);
         bz_registerEvent(bz_eSlashCommandEvent,&autoReport);
+        bz_registerEvent(bz_eGameEndEvent,&autoReport);
+        bz_registerEvent(bz_eTickEvent,&autoReport);
         bz_registerCustomSlashCommand ( "cancel", &autoReport  );
         bz_registerCustomSlashCommand ( "official" , &autoReport );
         bz_debugMessage(4, "autoReport Plugin loaded");
@@ -386,8 +415,9 @@ BZF_PLUGIN_CALL int bz_Unload (void)
     if (isloaded) {
         bz_removeCustomSlashCommand ( "official" );
         bz_removeCustomSlashCommand ( "cancel" );
-        bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);
+        bz_removeEvent(bz_eTickEvent,&autoReport);
         bz_removeEvent(bz_eGameStartEvent,&autoReport);
+        bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);
         bz_removeEvent(bz_eGameEndEvent,&autoReport);
         bz_removeEvent(bz_eCaptureEvent,&autoReport);
         bz_removeEvent(bz_eSlashCommandEvent,&autoReport);
