@@ -18,8 +18,8 @@ if (isset($_POST['action'])) {
 
 if ($action == "challenger") {
     echo "challenger\n";
-    $teama=mysql_real_escape_string($_POST['teama']);
-    $data=mysql_real_escape_string($_POST['data']);
+    $teama=$_POST['teama'];
+    $data=$_POST['data'];
     if ($teama==""||$data=="") {
         echo "NOTEAM\nWe failed to declare a match with this player";
         return;
@@ -27,21 +27,21 @@ if ($action == "challenger") {
     $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
                        FROM l_player P
                        JOIN l_team T ON P.team = T.id
-                       WHERE P.callsign = \"$data\"");
+                       WHERE P.callsign = \"".mysql_real_escape_string($_POST['data'])."\"");
     $obj = mysql_fetch_object($res);
     if ($obj->team_id == 0 )  {
         echo "NOTEAM\n$data does not belong to any team and tried to declare a match ?!";
         return;
     }
-    else  echo "TEAMFOUND\n$teama\n".mysql_real_escape_string($obj->teamname)."\n$data has  declared that the team ".mysql_real_escape_string($obj->teamname)." will play an official match too.
-        \nThe match will be $teama versus ".mysql_real_escape_string($obj->teamname)."\nThis match can still be canceled by using command /cancel";
+    else  echo "TEAMFOUND\n$teama\n".$obj->teamname."\n$data has  declared that the team ".$obj->teamname." will play an official match too.
+        \nThe match will be $teama versus ".$obj->teamname."\nThis match can still be canceled by using command /cancel";
 
     return;
 }
 
 if ($action == "firstdeclare") {
     echo "firstdeclare\n";
-    $data=mysql_real_escape_string($_POST['data']);
+    $data=$_POST['data'];
     if ($data=="") {
         echo "NOTEAM\nWe failed to declare a match with this player";
         return;
@@ -49,21 +49,21 @@ if ($action == "firstdeclare") {
     $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
                        FROM l_player P
                        JOIN l_team T ON P.team = T.id
-                       WHERE P.callsign = \"$data\"");
+                       WHERE P.callsign = \"".mysql_real_escape_string($_POST['data'])."\"");
     $obj = mysql_fetch_object($res);
     if ($obj->team_id == 0 )  {
         echo "NOTEAM\n$data does not belong to any team and tried to declare a match ?!";
         return;
     }
-    else  echo "TEAMFOUND\n".mysql_real_escape_string($obj->teamname)."\n$data has  declared that the team ".mysql_real_escape_string($obj->teamname)." will play an official match.\n".mysql_real_escape_string($obj->teamname)." is waiting for a challenger !!";
+    else  echo "TEAMFOUND\n".$obj->teamname."\n$data has  declared that the team ".$obj->teamname." will play an official match.\n".$obj->teamname." is waiting for a challenger !!";
     return;
 }
 
 if ($action == "identTeam") {
     echo "identTeam\n";
-    $player=mysql_real_escape_string($_POST['player']);
-    $playerteam=mysql_real_escape_string($_POST['playerteam']);
-    $teama=mysql_real_escape_string($_POST['teama']);
+    $player=$_POST['player'];
+    $playerteam=$_POST['playerteam'];
+    $teama=$_POST['teama'];
 
     if ($player=="" || $playerteam=="" ||$teama=="") {
         echo "NOTEAM";
@@ -72,7 +72,7 @@ if ($action == "identTeam") {
     $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
                        FROM l_player P
                        JOIN l_team T ON P.team = T.id
-                       WHERE P.callsign = \"$player\"");
+                       WHERE P.callsign = \"".mysql_real_escape_string($_POST['player'])."\"");
     $obj = mysql_fetch_object($res);
     if ($obj->team_id == 0 )  {
         echo "NOTEAM";
@@ -88,10 +88,10 @@ if ($action == "identTeam") {
 
 if ($action == "spawn") {
     echo "spawn\n";
-    $player=mysql_real_escape_string($_POST['player']);
-    $teamb=mysql_real_escape_string($_POST['teamb']);
-    $teama=mysql_real_escape_string($_POST['teama']);
-    $playerid=mysql_real_escape_string($_POST['playerid']);
+    $player=$_POST['player'];
+    $teamb=$_POST['teamb'];
+    $teama=$_POST['teama'];
+    $playerid=$_POST['playerid'];
     if ($player=="" || $teamb=="" ||$teama=="" || $playerid=="" ) {
         echo "ERROR";
         return;
@@ -99,7 +99,7 @@ if ($action == "spawn") {
     $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
                        FROM l_player P
                        JOIN l_team T ON P.team = T.id
-                       WHERE P.callsign = \"$player\"");
+                       WHERE P.callsign = \"".mysql_real_escape_string($_POST['player'])."\"");
     $obj = mysql_fetch_object($res);
     if ($obj->team_id == 0 )  {
         echo "NOTEAM\n$playerid";
@@ -115,14 +115,14 @@ if ($action == "spawn") {
 
 if ($action == "entermatch") {
     echo "entermatch\n";
-    $teamb=mysql_real_escape_string($_POST['teamb']);
-    $teama=mysql_real_escape_string($_POST['teama']);
-    $scoreb=mysql_real_escape_string($_POST['scoreb']);
-    $scorea=mysql_real_escape_string($_POST['scorea']);
-    $hash=mysql_real_escape_string($_POST['hash']);
+    $teamb=$_POST['teamb'];
+    $teama=$_POST['teama'];
+    $scoreb=$_POST['scoreb'];
+    $scorea=$_POST['scorea'];
+    $hash=$_POST['hash'];
     $remoteip=gethostbyname(gethostbyaddr($_SERVER["REMOTE_ADDR"]));
     $res = mysql_query("SELECT A.hostname hostname
-                       FROM  l_autoreport A WHERE A.hash = \"$hash\"");
+                       FROM  l_autoreport A WHERE A.hash = \"".mysql_real_escape_string($_POST['hash'])."\"");
     $obj = mysql_fetch_object($res);
     $ISOK=false;
     if ($obj->hostname != "") {
@@ -130,12 +130,12 @@ if ($action == "entermatch") {
     }
     if ($ISOK) {
         $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
-                           FROM  l_team T WHERE T.name = \"$teama\"");
+                           FROM  l_team T WHERE T.name = \"".mysql_real_escape_string($_POST['teama'])."\"");
         $obj = mysql_fetch_object($res);
         $idteama = $obj->team_id;
         $zeloa = $obj->score;
         $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
-                           FROM  l_team T WHERE T.name = \"$teamb\"");
+                           FROM  l_team T WHERE T.name = \"".mysql_real_escape_string($_POST['teamb'])."\"");
         $obj = mysql_fetch_object($res);
         $idteamb = $obj->team_id;
         $zelob = $obj->score;
@@ -159,18 +159,21 @@ function entermatch_postIt ($teamA,$teamB,$scoreA,$scoreB, $tsActUnix) {
     // Insert data into MATCH table
     $tsActStr = date ("Y-m-d H:i:s", $tsActUnix);
     $now = gmdate("Y-m-d H:i:s");
-    $s_playerid = 46;
+    $res = mysql_query("SELECT l_player.id id  FROM  l_player  WHERE l_player.callsign = \"autoreport\"");
+    $obj = mysql_fetch_object($res);
+    $s_playerid = $obj->id;
     sqlQuery("insert into ". TBL_MATCH ."
              (team1, score1, team2, score2, tsactual, identer, tsenter,
              oldrankt1, oldrankt2, newrankt1, newrankt2)
-             values($teamA, $scoreA, $teamB, $scoreB, '$tsActStr', $s_playerid, '$now',
-             $rowA->score, $rowB->score, $newA, $newB)");
+             values(".mysql_real_escape_string($teamA).", ".mysql_real_escape_string($scoreA).",
+                    ".mysql_real_escape_string($teamB).", ".mysql_real_escape_string($scoreB).", 
+                   '".mysql_real_escape_string($tsActStr)."', $s_playerid, '$now', $rowA->score, $rowB->score, $newA, $newB)");
 
     if ($tsActUnix < section_entermatch_queryLastMatchTime ()) {
         section_entermatch_recalcAllRatings();
     } else {
-        sqlQuery("update l_team SET score='$newA', active='yes' where id = '$teamA'");
-        sqlQuery("update l_team SET score='$newB', active='yes' where id = '$teamB'");
+        sqlQuery("update l_team SET score='".mysql_real_escape_string($newA)."', active='yes' where id = '".mysql_real_escape_string($teamA)."'");
+        sqlQuery("update l_team SET score='".mysql_real_escape_string($newB)."', active='yes' where id = '".mysql_real_escape_string($teamB)."'");
     }
 
 }

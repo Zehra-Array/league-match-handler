@@ -5,7 +5,8 @@
 #include <iostream>
 #include "TextUtils.h"
 #include <string.h>
-/* experimental plugin by Murielle Darc */
+
+
 
 bool official = false;
 bool isTeamcoloridentified=false;
@@ -138,6 +139,9 @@ public:
         pauseState=false;
         pauseTotalTime=0;
     }
+    // =============================================================================
+    // Credit to Brad for sharing the code inside the encryptdata functions below
+    // =============================================================================
 
     std::string encryptdata ( bzApiString data)
     {
@@ -182,6 +186,9 @@ public:
         return data1;
 
     }
+    // =============================================================================
+    // Credit to Brad for sharing the code inside the encryptdata functions above
+    // =============================================================================
 
     virtual void process ( bz_EventData *eventData )
     {
@@ -283,7 +290,7 @@ public:
                 TeamB="";
                 return;
             }
-           
+
             if (!isTeamcoloridentified) {
                 scoreA = 0;
                 scoreB = 0;
@@ -321,7 +328,9 @@ public:
         }
         return;
     }
-
+    // ============================================
+    // Credit you to Brad for sharing the code below
+    // ============================================
     virtual bool handle ( int playerID, bzApiString command, bzApiString /*message*/, bzAPIStringList* /*params*/ ) {
         bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
         if (!player)
@@ -339,6 +348,9 @@ public:
             return true;
         }
 
+        // ============================================
+        // Credit you to Brad for sharing the code above
+        // ============================================
         if (command == "official") {
             if (official) {
                 bz_sendTextMessage(BZ_SERVER,playerID,"An official match is already  planned :");
@@ -375,9 +387,11 @@ public:
                 isofficialrequested=false;
                 TeamA="";
                 TeamB="";
+                bz_freePlayerRecord(player);
                 return true;
             }
             bz_sendTextMessage(BZ_SERVER,playerID,(std::string("There is no nothing to be canceled")).c_str());
+            bz_freePlayerRecord(player);
             return true;
         }
 

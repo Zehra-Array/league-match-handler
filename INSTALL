@@ -1,0 +1,132 @@
+1) INTRODUCTION
+  -------------
+
+This is the autoreport plugin for Ducati League.
+It was first dedicated to (the young) Showdown League and then it has been improved to fit the needs of the Ducati League.
+The plugin consists in two parts :  (1) a bzfs plugin and (2) a webleague patch.
+
+The bzfs plugin handles the events on the league match server. It also checks that an official match has satisfied enough 
+the league rules in order to be reported. It catches informations from the webleague itself. Finally, it sends informations 
+to the website such that the official match can be reported.
+
+The webleague patch allows to catch informations in the webleague database and to send them to the bzfs plugin. It receives 
+informations from the bzfs plugin to report or not an official match.
+
+2) CREDITS
+
+Author would like to friendly give special credits to the following people 
+
+-- Brad who has nicely shared his original plugin.  It allow us to save a bunch of times since we didnt start from scratch.
+-- Strayer who suggested modifications in the php script to prevent sql injection
+-- Osta, Asmeouuus, Hurricane, ReX, Neofit who have participated at the premilarly (but still important) tests
+-- Some annoying bzplayers (the list is too long for naming all of them) who make people so disgusted than they do a break with bzflag. 
+   So it gave more time to be spent in the coding
+
+ 
+
+3) SYNOPSIS 
+   ---------
+
+The plugin register to the following events :
+
+bz_eCaptureEvent
+bz_ePlayerSpawnEvent
+bz_eGameStartEvent
+bz_eSlashCommandEvent
+bz_eGameEndEvent
+bz_eTickEvent
+
+It also implements command /cancel and /official
+
+The command /official stands for an official declaration of a match. It is like a signature. Nevertheless, 
+any official declaration (command /official) can be canceled at anytime by anyone with command /cancel
+until command /countdown has been exectuted.
+
+When player A run command /official, the bzfs plugin asks to webleague patch the name of player A's team.
+The webleague patch would return the correct team name if player A belong to a team. Let denote it by TeamA.
+Then the server informs  all the players that Team A is waiting for a challenger. This can still be canceled 
+by command "/cancel" by anyone.    
+
+If a second player enter command /official, the bzfs plugin would  get the player B's team nametoo in the same way
+. Let denote it by Team B.  If Team A is also Team B then the plugin would inform that Team A cannot match against 
+itself. Then, the match is not set in official mode. If Player A or/and Player B does not belong to any team, then 
+a message is sent to all the players to inform on it. The match is not set in official mode. Otherwise the match is
+ set in official mode. This mode can still be canceled by command "/cancel".    
+
+After a match has been started in official mode, the plugin knows the name of the two teams that are playing. It is 
+definitive. So a player cannot expect to escape from the autoreporting by leaving at the very last second of the game, 
+as it used to be in a previous pluging running in Shodown League. This plugin has been written in order to prevent 
+such a poor gaming.
+
+After the countdown command, only players who belong to Team A or Team B can spawn. The bzfs plugin registers 
+bz_ePlayerSpawnEvent to prevent players from other team to spawn during match... If a player who does not belong to any 
+of the playing team tries to spawn, it would be kicked with a message that would informs him that an offical match is 
+running. 
+
+By the way, the bzfs plugin does not still know what is the color of each team (is Team A playing in green or in red ?). 
+It is the reason why the bzfs plugin registers to  bz_eCaptureEvent.  The first time a flag is captured then the bzfs 
+plugin get enough information to guess which team is playing in red and which team is playing in red. Of course, player 
+can switch and mix team after. It would then fool the plugin that would report the match. But such an the identification 
+procedure, it minimizes the internet bandwith with the webleague.
+
+If a match is ended by command /gameover, then it will not be reported. So a match must go during the timelimit. This is 
+handled by the registration to bz_eGameEndEvent.
+
+During match, the bzfs plugin counts the amont of time in which teams Team A and Team B have more than 2 players. At the 
+end of the match, the bzfs plugin compares the total duration for which Team A or/and Team B played with more than 
+2 players. In case this amount of time is less than 90 percent of the timelimit (pauses are taken into account), then the 
+match is not reported and a message is sent to players to inform them. The reason is that  N vs 1, and N vs 0 are not 
+allowed by the Rules of Ducati leagues.
+
+Finally, the bzfs plugin takes into account the total pause time (command /countdown /pause) and it is compatible with 
+timelimit plugin. 
+
+
+4) WEBLEAGUE PATCH INSTALL
+   -----------------------
+
+Let denote the root directory of your webleague installation by WEBDIR. Let also denote the directory where the files of the 
+autoreport plugin are copied by SOURCEDIR. In order to install the webleague patch, files 
+
+-- copy/overwrite the two files in SOURCEDIR (autoreport_plugin.php and index.php) to WEBDIR/
+-- copy SOURCEDIR/webleague/section/autoreport.php into WEBDIR/section/
+-- copy/overwrite files into SOURCEDIR/webleague/support/sqlscripts/create_new_install to  WEBDIR/support/sqlscripts/create_new_install
+-- copy the directory  SOURCEDIR/webleague/support/sqlscripts/add_autoreport into WEBDIR/support/sqlscripts/
+
+5) WEBLEAGUE PATCH USE
+   -------------------
+
+The next step is to update the sql database. Actually, a table will be added with respect to the default webleague database
+Consequently, for a new install, just change directory to WEBDIR/support/sqlscripts/ and execute script runme.sh. In case 
+of an update of an previously existing database, change directory to  WEBDIR/support/sqlscripts/add_autoreport and 
+execute script runme.sh.
+
+Let assume that WEBSITE_URL is the url of the webleague site. 
+Connect to WEBSITE_URL and login as an admin. the frontend to add/edit/remove HASH string of official match league server is 
+available thru the link "autoreport" in the admin panel. A new permission "AutoReport" has been introduced to allow/deny access
+to the frontend. 
+
+Create a new player with callsign "autoreport". All auto-reports will be made with its id (the password is not needed either by
+the bzfs plugin or the webleague patch). 
+ 
+6) BZFS PLUGIN INSTALL
+   --------------------
+
+Let again denote the directory where the files of the autoreport plugin are copied by SOURCEDIR. The first step is to change 
+directory to SOURCEDIR/AutoReport. There is a MakeFile that allows to compile the plugin by just running the command make.  It will 
+create a new file, AutoReport.so <-- it is the bzfs plugin!!!! Copy SOURCEDIR/AutoReport.so into a directory where it could be 
+load by bzfs. Let denote by PLUGIN_PATH such a directory.
+
+7) BZFS PLUGIN USE
+   ----------------
+
+The plugin can be loaded in the command line with the required parameters separated by a quote. The first parameter has to be 
+the link of the php patch that handles connection with bzfs plugin. By default, it is  autoreport_handle.php. The second 
+parameter is a hash string that is used to validate the identity of the bzfs server side. Let assume the hash string is 
+774320FJCFIE9484292E2DE24. Consequently, the command line would be
+
+bzfs -loadplugin PLUGIN_PATH/AutoReport.so,http://WEBSITE_URL/autoreport_handle.php,774320FJCFIE9484292E2DE24 [...]
+
+It is recommended to change the default name of the file autoreport_handle.php into WEBDIR. It would improve security.
+
+ 
