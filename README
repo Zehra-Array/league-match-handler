@@ -1,5 +1,5 @@
-1) INTRODUCTION
-  -------------
+INTRODUCTION
+------------
 
 This is the autoreport plugin for Ducati League.
 It was first dedicated to (the young) Showdown League and then it has been improved to fit the needs of the Ducati League.
@@ -12,20 +12,32 @@ to the website such that the official match can be reported.
 The webleague patch allows to catch informations in the webleague database and to send them to the bzfs plugin. It receives 
 informations from the bzfs plugin to report or not an official match.
 
-2) CREDITS
+CREDITS
+-------
 
 Author would like to friendly give special credits to the following people 
 
--- Brad who has nicely shared his original plugin.  It allow us to save a bunch of times since we didnt start from scratch.
--- Strayer who suggested modifications in the php script to prevent sql injection
--- Osta, Asmeouuus, Hurricane, ReX, Neofit who have participated at the premilarly (but still important) tests
--- Some annoying bzplayers (the list is too long for naming all of them) who make people so disgusted than they do a break with bzflag. 
-   So it gave more time to be spent in the coding
-
+-- Mark Thomas (aka Menotume)
  
+   The project contains modified code from the Web League project : 
+   
+   http://sourceforge.net/projects/web-league/
 
-3) SYNOPSIS 
-   ---------
+-- Brad Wark
+
+   Who has nicely shared his original plugin. 
+   It allow us to save a bunch of times since we didnt start from scratch.
+
+-- Strayer 
+
+   Who suggested modifications in the php script to prevent sql injection.
+
+-- Osta, Asmeouuus, Hurricane, ReX, Neofit and others 
+
+   Who have participated at the premilarly (but still important) tests
+
+SYNOPSIS 
+--------
 
 The plugin register to the following events :
 
@@ -81,9 +93,8 @@ allowed by the Rules of Ducati leagues.
 Finally, the bzfs plugin takes into account the total pause time (command /countdown /pause) and it is compatible with 
 timelimit plugin. 
 
-
-4) WEBLEAGUE PATCH INSTALL
-   -----------------------
+WEBLEAGUE PATCH INSTALL
+-----------------------
 
 Let denote the root directory of your webleague installation by WEBDIR. Let also denote the directory where the files of the 
 autoreport plugin are copied by SOURCEDIR. In order to install the webleague patch, files 
@@ -93,8 +104,8 @@ autoreport plugin are copied by SOURCEDIR. In order to install the webleague pat
 -- copy/overwrite files into SOURCEDIR/webleague/support/sqlscripts/create_new_install to  WEBDIR/support/sqlscripts/create_new_install
 -- copy the directory  SOURCEDIR/webleague/support/sqlscripts/add_autoreport into WEBDIR/support/sqlscripts/
 
-5) WEBLEAGUE PATCH USE
-   -------------------
+WEBLEAGUE PATCH USE
+-------------------
 
 The next step is to update the sql database. Actually, a table will be added with respect to the default webleague database
 Consequently, for a new install, just change directory to WEBDIR/support/sqlscripts/ and execute script runme.sh. In case 
@@ -109,16 +120,16 @@ to the frontend.
 Create a new player with callsign "autoreport". All auto-reports will be made with its id (the password is not needed either by
 the bzfs plugin or the webleague patch). 
  
-6) BZFS PLUGIN INSTALL
-   --------------------
+BZFS PLUGIN INSTALL
+-------------------
 
 Let again denote the directory where the files of the autoreport plugin are copied by SOURCEDIR. The first step is to change 
 directory to SOURCEDIR/AutoReport. There is a MakeFile that allows to compile the plugin by just running the command make.  It will 
 create a new file, AutoReport.so <-- it is the bzfs plugin!!!! Copy SOURCEDIR/AutoReport.so into a directory where it could be 
 load by bzfs. Let denote by PLUGIN_PATH such a directory.
 
-7) BZFS PLUGIN USE
-   ----------------
+BZFS PLUGIN USE
+---------------
 
 The plugin can be loaded in the command line with the required parameters separated by a quote. The first parameter has to be 
 the link of the php patch that handles connection with bzfs plugin. By default, it is  autoreport_handle.php. The second 
@@ -128,5 +139,3 @@ parameter is a hash string that is used to validate the identity of the bzfs ser
 bzfs -loadplugin PLUGIN_PATH/AutoReport.so,http://WEBSITE_URL/autoreport_handle.php,774320FJCFIE9484292E2DE24 [...]
 
 It is recommended to change the default name of the file autoreport_handle.php into WEBDIR. It would improve security.
-
- 
