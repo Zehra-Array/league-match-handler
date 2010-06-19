@@ -1,4 +1,4 @@
-CXXFLAGS = -fPIC -frtti -I../../include -I../../src/bzfs -O
+CXXFLAGS = -fPIC -frtti -I../../include -O
 LDLIBS = -ldl
 all : AutoReport.so
 AutoReport.o : autoReport.cpp
