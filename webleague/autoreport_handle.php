@@ -126,7 +126,8 @@ if ($action == "entermatch") {
     $obj = mysql_fetch_object($res);
     $ISOK=false;
     if ($obj->hostname != "") {
-        if (gethostbyname($obj->hostname)==$remoteip) $ISOK=true;
+       while ($hostip = gethostbynamel($obj->hostname))  
+          if ($hostip==$remoteip) $ISOK=true;
     }
     if ($ISOK) {
         $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
@@ -167,7 +168,7 @@ function entermatch_postIt ($teamA,$teamB,$scoreA,$scoreB, $tsActUnix) {
              oldrankt1, oldrankt2, newrankt1, newrankt2)
              values(".mysql_real_escape_string($teamA).", ".mysql_real_escape_string($scoreA).",
                     ".mysql_real_escape_string($teamB).", ".mysql_real_escape_string($scoreB).", 
-                   '".mysql_real_escape_string($tsActStr)."', $s_playerid, '$now', $rowA->score, $rowB->score, $newA, $newB)");
+                    '$tsActStr', $s_playerid, '$now', $rowA->score, $rowB->score, $newA, $newB)");
 
     if ($tsActUnix < section_entermatch_queryLastMatchTime ()) {
         section_entermatch_recalcAllRatings();
