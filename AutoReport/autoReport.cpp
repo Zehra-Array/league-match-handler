@@ -1,3 +1,8 @@
+/* Copyright 2010 Murielle Darc
+ * Distributed under the terms of the GNU General Public License v2
+ * Based in part upon a autreport plugin from Brad Wark.
+ */
+
 #include "bzfsAPI.h"
 #include <string>
 #include <sstream>
@@ -139,9 +144,6 @@ public:
         pauseState=false;
         pauseTotalTime=0;
     }
-    // =============================================================================
-    // Credit to Brad for sharing the code inside the encryptdata functions below
-    // =============================================================================
 
     std::string encryptdata ( bzApiString data)
     {
@@ -186,9 +188,6 @@ public:
         return data1;
 
     }
-    // =============================================================================
-    // Credit to Brad for sharing the code inside the encryptdata functions above
-    // =============================================================================
 
     virtual void process ( bz_EventData *eventData )
     {
@@ -328,10 +327,8 @@ public:
         }
         return;
     }
-    // ============================================
-    // Credit you to Brad for sharing the code below
-    // ============================================
-    virtual bool handle ( int playerID, bzApiString command, bzApiString /*message*/, bzAPIStringList* /*params*/ ) {
+
+   virtual bool handle ( int playerID, bzApiString command, bzApiString /*message*/, bzAPIStringList* /*params*/ ) {
         bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
         if (!player)
             return true;
@@ -348,9 +345,6 @@ public:
             return true;
         }
 
-        // ============================================
-        // Credit you to Brad for sharing the code above
-        // ============================================
         if (command == "official") {
             if (official) {
                 bz_sendTextMessage(BZ_SERVER,playerID,"An official match is already  planned :");
