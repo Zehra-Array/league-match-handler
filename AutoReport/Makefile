@@ -1,7 +1,7 @@
 CXXFLAGS = -fPIC -frtti -I../../include -O
 LDLIBS = -ldl
 all : AutoReport.so
-AutoReport.o : autoReport.cpp
+AutoReport.o : AutoReport.cpp
 		$(CXX) $(CXXFLAGS) -c -o $@  $^ 
 AutoReport.so : AutoReport.o
 		$(CXX) $(CXXFLAGS) -shared -rdynamic $^ -o $@
