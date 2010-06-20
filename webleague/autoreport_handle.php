@@ -126,7 +126,7 @@ if ($action == "entermatch") {
     $obj = mysql_fetch_object($res);
     $ISOK=false;
     if ($obj->hostname != "") {
-       while ($hostip = gethostbynamel($obj->hostname))  
+		foreach (gethostbynamel($obj->hostname) as $hostip)
           if ($hostip==$remoteip) $ISOK=true;
     }
     if ($ISOK) {
