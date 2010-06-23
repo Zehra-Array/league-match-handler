@@ -302,7 +302,8 @@ public:
                                                +"&teamb=" + encryptdata(TeamB)
                                                +"&scorea="+ encryptdata(scoreA)
                                                +"&scoreb="+ encryptdata(scoreB)
-                                               +"&hash=" + encryptdata(HASH)).c_str());
+                                               +"&hash=" + encryptdata(HASH)
+                                               +"&mlen="+encryptdata((int)saveTimeLimit/60)).c_str());
             official = false;
             isTeamcoloridentified=false;
             isofficialrequested=false;

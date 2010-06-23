@@ -120,6 +120,7 @@ if ($action == "entermatch") {
     $scoreb=$_POST['scoreb'];
     $scorea=$_POST['scorea'];
     $hash=$_POST['hash'];
+    $mlen=$_POST['mlen'];
     $remoteip=gethostbyname(gethostbyaddr($_SERVER["REMOTE_ADDR"]));
     $res = mysql_query("SELECT A.hostname hostname
                        FROM  l_autoreport A WHERE A.hash = \"".mysql_real_escape_string($_POST['hash'])."\"");
@@ -140,8 +141,10 @@ if ($action == "entermatch") {
         $obj = mysql_fetch_object($res);
         $idteamb = $obj->team_id;
         $zelob = $obj->score;
-        section_entermatch_calculateRating ($scorea, $scoreb, $zeloa , $zelob, &$newa, &$newb);
-        entermatch_postIt ($idteama, $idteamb,$scorea,$scoreb, time());
+        $res = mysql_query("SELECT l_player.id id  FROM  l_player  WHERE l_player.callsign = \"autoreport\"");
+        $obj = mysql_fetch_object($res);
+        $s_playerid = $obj->id;
+        section_entermatch_postIt ($idteama, $idteamb,$scorea,$scoreb, time(),$mlen,$s_playerid);
         $vara=$newa-$zeloa;
         $varb=$newb-$zelob;
         echo  "$teama  $scorea - $scoreb  $teamb\n$teama => $newa ". (($vara>=0) ? "(+$vara)" : "($vara)")."\n$teamb => $newb ". (($varb>=0) ? "(+$varb)" : "($varb)") ;
@@ -149,35 +152,5 @@ if ($action == "entermatch") {
     }
     else echo  "The match has not been reported\nIt seems this server has not received the authorizations\nfor such an operation on the league ...";
     }
-
-function entermatch_postIt ($teamA,$teamB,$scoreA,$scoreB, $tsActUnix) {
-
-    section_entermatch_orderResults (&$teamA, &$teamB, &$scoreA, &$scoreB);
-    $rowA = queryGetTeam ($teamA);
-    $rowB = queryGetTeam ($teamB);
-    section_entermatch_calculateRating ($scoreA, $scoreB, $rowA->score, $rowB->score, &$newA, &$newB);
-
-    // Insert data into MATCH table
-    $tsActStr = date ("Y-m-d H:i:s", $tsActUnix);
-    $now = gmdate("Y-m-d H:i:s");
-    $res = mysql_query("SELECT l_player.id id  FROM  l_player  WHERE l_player.callsign = \"autoreport\"");
-    $obj = mysql_fetch_object($res);
-    $s_playerid = $obj->id;
-    sqlQuery("insert into ". TBL_MATCH ."
-             (team1, score1, team2, score2, tsactual, identer, tsenter,
-             oldrankt1, oldrankt2, newrankt1, newrankt2)
-             values(".mysql_real_escape_string($teamA).", ".mysql_real_escape_string($scoreA).",
-                    ".mysql_real_escape_string($teamB).", ".mysql_real_escape_string($scoreB).", 
-                    '$tsActStr', $s_playerid, '$now', $rowA->score, $rowB->score, $newA, $newB)");
-
-    if ($tsActUnix < section_entermatch_queryLastMatchTime ()) {
-        section_entermatch_recalcAllRatings();
-    } else {
-        sqlQuery("update l_team SET score='".mysql_real_escape_string($newA)."', active='yes' where id = '".mysql_real_escape_string($teamA)."'");
-        sqlQuery("update l_team SET score='".mysql_real_escape_string($newB)."', active='yes' where id = '".mysql_real_escape_string($teamB)."'");
-    }
-
-}
-
 
 ?>
