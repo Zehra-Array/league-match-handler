@@ -143,14 +143,17 @@ if ($action == "entermatch") {
         $zelob = $obj->score;
         $res = mysql_query("SELECT l_player.id id  FROM  l_player  WHERE l_player.callsign = \"autoreport\"");
         $obj = mysql_fetch_object($res);
-        $s_playerid = $obj->id;
-        section_entermatch_postIt ($idteama, $idteamb,$scorea,$scoreb, time(),$mlen,$s_playerid);
+        $_SESSION['playerid'] =  $obj->id;
+        section_entermatch_calculateRating ($scorea, $scoreb, $zeloa , $zelob, &$newa, &$newb);
         $vara=$newa-$zeloa;
         $varb=$newb-$zelob;
+        ob_start();
+        section_entermatch_postIt ($idteama, $idteamb,$scorea,$scoreb, time(),$mlen);
+        ob_end_clean();
         echo  "$teama  $scorea - $scoreb  $teamb\n$teama => $newa ". (($vara>=0) ? "(+$vara)" : "($vara)")."\n$teamb => $newb ". (($varb>=0) ? "(+$varb)" : "($varb)") ;
 
-    }
+    }       
     else echo  "The match has not been reported\nIt seems this server has not received the authorizations\nfor such an operation on the league ...";
-    }
+} 
 
 ?>
