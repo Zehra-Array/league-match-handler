@@ -334,7 +334,7 @@ public:
         if (!player)
             return true;
 
-        if ((!player->hasPerm(bz_perm_spawn)) || (player->team == eObservers)) {
+        if ((!player->hasPerm("AUTOREPORT")) || (player->team == eObservers)) {
             bz_sendTextMessage(BZ_SERVER,playerID,"Only players can use that command.");
             bz_freePlayerRecord(player);
             return true;
