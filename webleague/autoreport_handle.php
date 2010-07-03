@@ -9,6 +9,8 @@ require_once("lib/sql.php");
 require_once("section/entermatch.php");
 
 sqlConnect(SQL_CONFIG);
+define (FIELD_SCORE,          '(ts.won * s.points_win + ts.draw *  s.points_draw + ts.lost * s.points_lost)');
+define (QUERY_RANKINGORDER,   'ORDER BY tscore desc, ts.zelo desc, ts.won desc, ts.draw desc, ts.matches asc');
 
 
 if (isset($_POST['action'])) {
@@ -127,8 +129,8 @@ if ($action == "entermatch") {
     $obj = mysql_fetch_object($res);
     $ISOK=false;
     if ($obj->hostname != "") {
-		foreach (gethostbynamel($obj->hostname) as $hostip)
-          if ($hostip==$remoteip) $ISOK=true;
+        foreach (gethostbynamel($obj->hostname) as $hostip)
+        if ($hostip==$remoteip) $ISOK=true;
     }
     if ($ISOK) {
         $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
@@ -152,8 +154,39 @@ if ($action == "entermatch") {
         ob_end_clean();
         echo  "$teama  $scorea - $scoreb  $teamb\n$teama => $newa ". (($vara>=0) ? "(+$vara)" : "($vara)")."\n$teamb => $newb ". (($varb>=0) ? "(+$varb)" : "($varb)") ;
 
-    }       
+    }
     else echo  "The match has not been reported\nIt seems this server has not received the authorizations\nfor such an operation on the league ...";
-} 
+}
+
+if ($action == "ladder") {
+    echo "ladder\n";
+
+    $season = null;
+    $now = nowDateTime();
+    $season = sqlQuerySingle("select * from l_season where startdate <= '$now' and fdate >= '$now'");
+    if ($season == null) $season = sqlQuerySingle("select * from l_season where active = 'yes' and id > 1");
+    if ($season == null) $season = sqlQuerySingle("select * from l_season where enddate <= '$now' and id > 1 order by enddate desc limit 1");
+    if ($season)  $season_id = $season->id;
+    else $season_id = 0;
+
+    $res = sqlQuery("SELECT ts.team, " . FIELD_SCORE . " tscore, ts.won,ts.lost,ts.draw, ts.zelo szelo,ts.matches,
+                    team.name, team.leader,team.score gzelo,team.status,
+                    p.callsign
+                    FROM (l_teamscore ts, l_season s)
+                    left join l_team team on team.id = ts.team
+                    left join l_player p on p.id = team.leader
+                    WHERE ts.season = $season_id
+                    AND   s.id = $season_id
+                    GROUP BY ts.team
+                    " . QUERY_RANKINGORDER);
+     
+    printf("rank    Team name                                 Score\n");
+    $irank=0;
+    while ($obj = mysql_fetch_object($res)) {
+            printf("%2d.     %-40s  %d\n",++$irank,$obj->name,$obj->tscore);
+    }
+
+    return;
+}
 
 ?>

@@ -110,6 +110,10 @@ public:
             k1=1;
         }
 
+        if (tokens[0]==std::string("ladder")) {
+            k1=1;
+        }
+
         if (k1!=0) {
             for (int k=k1;k<tokens.size();k++) bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"%s",tokens[k].c_str());
         }
@@ -329,7 +333,7 @@ public:
         return;
     }
 
-   virtual bool handle ( int playerID, bzApiString command, bzApiString /*message*/, bzAPIStringList* /*params*/ ) {
+   virtual bool handle ( int playerID, bzApiString command, bzApiString /*message*/, bzAPIStringList* params ) {
         bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
         if (!player)
             return true;
@@ -388,6 +392,20 @@ public:
             bz_sendTextMessage(BZ_SERVER,playerID,(std::string("There is no nothing to be canceled")).c_str());
             bz_freePlayerRecord(player);
             return true;
+        }        
+
+
+        if (command == "ladder") {
+            bz_addURLJob(URL.c_str(), &myURL, (std::string("&action=ladder")).c_str());
+            bz_freePlayerRecord(player);
+            return true;
+        }
+
+
+        if (command == "teaminfo") {
+            bz_addURLJob(URL.c_str(), &myURL, (std::string("&action=teaminfo")).c_str());
+            bz_freePlayerRecord(player);
+            return true;
         }
 
 
@@ -413,6 +431,8 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
         bz_registerEvent(bz_eTickEvent,&autoReport);
         bz_registerCustomSlashCommand ( "cancel", &autoReport  );
         bz_registerCustomSlashCommand ( "official" , &autoReport );
+        bz_registerCustomSlashCommand ( "ladder", &autoReport  );
+        bz_registerCustomSlashCommand ( "teaminfo" , &autoReport );
         bz_debugMessage(4, "autoReport Plugin loaded");
         isloaded=true;
     }
@@ -424,6 +444,8 @@ BZF_PLUGIN_CALL int bz_Unload (void)
     if (isloaded) {
         bz_removeCustomSlashCommand ( "official" );
         bz_removeCustomSlashCommand ( "cancel" );
+        bz_removeCustomSlashCommand ( "ladder" );
+        bz_removeCustomSlashCommand ( "teaminfo" );
         bz_removeEvent(bz_eTickEvent,&autoReport);
         bz_removeEvent(bz_eGameStartEvent,&autoReport);
         bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);
