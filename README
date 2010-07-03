@@ -1,7 +1,13 @@
+AUTHOR
+-------
+
+Murielle Darc aka Cherry, Lamu, Hedone
+
+
 INTRODUCTION
 ------------
 
-This is the autoreport plugin for Ducati League.
+This is the autoreport plugin for Ducati League by Murielle Darc (aka Cherry).
 It was first dedicated to (the young) Showdown League and then it has been improved to fit the needs of the Ducati League.
 The plugin consists in two parts :  (1) a bzfs plugin and (2) a webleague patch.
 
@@ -17,22 +23,32 @@ CREDITS
 
 Author would like to friendly give special credits to the following people 
 
+-- Mofo people (and Delusional) 
+  
+   who very nicely  allows to run a test bzfs server and a website to do some tests on planet-mofo.com
+
 -- Mark Thomas (aka Menotume)
  
    The project contains modified code from the Web League project : 
    
    http://sourceforge.net/projects/web-league/
 
+-- Steven Martens (aka Catay)
+
+   who has done some minor modifications in the code and who has reviewed it.
+   His main contribution was in fixing a bug due to the Timelimit plugin.
+
+ 
 -- Brad Wark
 
-   Who has nicely shared his original plugin. 
-   It allow us to save a bunch of times since we didnt start from scratch.
+   Who has nicely shared his original plugin even if we do not share any code with it. 
+   He has also shared his linux box to set up a test webleague and a test bzfs server with the plugin
 
 -- Strayer 
 
    Who suggested modifications in the php script to prevent sql injection.
 
--- Osta, Asmeouuus, Hurricane, ReX, Neofit and others 
+-- Osta, jh^ and others 
 
    Who have participated at the premilarly (but still important) tests
 
