@@ -209,21 +209,22 @@ if ($action == "online") {
             }
             $res_team = mysql_query("SELECT l_team.id,l_team.name FROM `l_team`");
             $numonline=0;
-            printf("================ \n");
+            printf("\n\n\n\n");
             while ($obj_team = mysql_fetch_object($res_team))
             {
                 $res = mysql_query("SELECT l_player.callsign FROM `l_player` WHERE l_player.team=$obj_team->id");
                 while ($obj = mysql_fetch_object($res))
                 {
-                    if (($index=array_search($obj->callsign,$tab->name)) !== FALSE)
+                    $index = array_keys($tab->name, $obj->callsign);
+                    foreach ($index as $key)
                     {
-                        printf("%-20s %-20s %-9s %s\n",$obj_team->name, $obj->callsign, $tab->color[$index], $tab->server[$index]);
+                        printf("%-20s %-20s %-9s %s\n",$obj_team->name, $obj->callsign, $tab->color[$key], $tab->server[$key]);
                         $numonline++;
                     }
                 }
                 if ($numonline == 0) printf("No online player :(\n");
             }
-            printf("================ \n");
+            printf("\n\n\n");
             
         }
     }
