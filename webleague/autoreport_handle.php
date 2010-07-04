@@ -179,14 +179,55 @@ if ($action == "ladder") {
                     AND   s.id = $season_id
                     GROUP BY ts.team
                     " . QUERY_RANKINGORDER);
-     
+
     printf("rank    Team name                                 Score\n");
     $irank=0;
     while ($obj = mysql_fetch_object($res)) {
-            printf("%2d.     %-40s  %d\n",++$irank,$obj->name,$obj->tscore);
+        printf("%2d.     %-40s  %d\n",++$irank,$obj->name,$obj->tscore);
     }
 
     return;
 }
+
+if ($action == "online") {
+    echo "online\n";
+    if (($content=file_get_contents('http://bzstats.strayer.de/stuff/ShowDown2.php'))!==false) {
+        $lines=explode("\n",$content);
+        if (count($lines)<2) {
+            printf("Currently, no registered league player is online\n");
+        }
+        else {
+            $lines=explode("\n",$content,-1);
+            $ind=0;
+            foreach($lines as $record)
+            {
+                $val=explode("\t", $record);
+                $tab->name[$ind]=$val[0];
+                $tab->color[$ind]=$val[1];
+                $tab->server[$ind++]=$val[2].":".$val[3];
+            }
+            $res_team = mysql_query("SELECT l_team.id,l_team.name FROM `l_team`");
+            $numonline=0;
+            printf("================ \n");
+            while ($obj_team = mysql_fetch_object($res_team))
+            {
+                $res = mysql_query("SELECT l_player.callsign FROM `l_player` WHERE l_player.team=$obj_team->id");
+                while ($obj = mysql_fetch_object($res))
+                {
+                    if (($index=array_search($obj->callsign,$tab->name)) !== FALSE)
+                    {
+                        printf("%-20s %-20s %-9s %s\n",$obj_team->name, $obj->callsign, $tab->color[$index], $tab->server[$index]);
+                        $numonline++;
+                    }
+                }
+                if ($numonline == 0) printf("No online player :(\n");
+            }
+            printf("================ \n");
+            
+        }
+    }
+    return;
+}
+
 
 ?>
