@@ -160,7 +160,7 @@ if ($action == "entermatch") {
 
 if ($action == "ladder") {
     echo "ladder\n";
-
+    echo $_POST['player']."\n";
     $season = null;
     $now = nowDateTime();
     $season = sqlQuerySingle("select * from l_season where startdate <= '$now' and fdate >= '$now'");
@@ -191,6 +191,7 @@ if ($action == "ladder") {
 
 if ($action == "online") {
     echo "online\n";
+    echo $_POST['player']."\n";
     if (($content=file_get_contents('http://bzstats.strayer.de/stuff/ShowDown2.php'))!==false) {
         $lines=explode("\n",$content);
         if (count($lines)<2) {

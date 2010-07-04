@@ -111,11 +111,21 @@ public:
         }
 
         if (tokens[0]==std::string("ladder")) {
-            k1=1;
+            k1=2;
+            int playerid;
+            std::istringstream iss( tokens[1] );
+            iss >>  playerid;
+            for (int k=k1;k<tokens.size();k++) bz_sendTextMessagef(BZ_SERVER,playerid,"%s",tokens[k].c_str());
+            k1=0;
         }
 
         if (tokens[0]==std::string("online")) {
-            k1=1;
+            k1=2;
+            int playerid;
+            std::istringstream iss( tokens[1] );
+            iss >>  playerid;
+            for (int k=k1;k<tokens.size();k++) bz_sendTextMessagef(BZ_SERVER,playerid,"%s",tokens[k].c_str());
+            k1=0;
         }
 
         if (k1!=0) {
@@ -400,14 +410,14 @@ public:
 
 
         if (command == "ladder") {
-            bz_addURLJob(URL.c_str(), &myURL, (std::string("&action=ladder")).c_str());
+            bz_addURLJob(URL.c_str(), &myURL, ("&action=ladder&player="+ encryptdata(playerID)).c_str());
             bz_freePlayerRecord(player);
             return true;
         }
 
 
         if (command == "online") {
-            bz_addURLJob(URL.c_str(), &myURL, (std::string("&action=online")).c_str());
+            bz_addURLJob(URL.c_str(), &myURL, ("&action=online&player="+ encryptdata(playerID)).c_str());
             bz_freePlayerRecord(player);
             return true;
         }
