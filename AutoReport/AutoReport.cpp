@@ -10,6 +10,7 @@
 #include <iostream>
 #include "TextUtils.h"
 #include <string.h>
+#include <map>
 
 
 
@@ -27,8 +28,37 @@ int scoreA;
 int scoreB;
 bool isGameRunning=false;
 double lasttick;
-double ruletime;
+double Totaltime_1vs1;
+double Totaltime_mixed_team;
+double Totaltime_even;
 BZ_GET_PLUGIN_VERSION
+
+typedef class trackplayer
+{
+public:
+    bool isTeamA;
+    bz_eTeamType eteam;
+    double lastupdatetime;
+    double startpausetime;
+    trackplayer(bool isteama)
+    {
+        isTeamA=isteama;
+        eteam=eNoTeam;
+        lastupdatetime=-1.0f;
+        startpausetime=-1.0f;
+    }
+
+    void part()
+    {
+        eteam=eNoTeam;
+        lastupdatetime=-1.0f;
+        startpausetime=-1.0f;
+    }
+
+} trackplayer;
+
+std::map <std::string, trackplayer> MapPlayersData;
+
 
 class MyURLHandler: public bz_URLHandler
 {
@@ -58,53 +88,27 @@ public:
             }
         }
 
-
-
         if (tokens[0]==std::string("challenger")) {
             k1=2;
             if (tokens[1]!=std::string("NOTEAM"))  {
-                k1=4;
-                if ( tokens[2] == tokens[3] ) {
-                    k1=8;
-                    bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"%s is not allowed to play an official match versus itself !",tokens[2].c_str());
+                k1=6;
+                if ( tokens[4] == tokens[5] ) {
+                    k1=10;
+                    bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"%s is not allowed to play an official match versus itself !",tokens[4].c_str());
                 } else {
                     official=true;
-                    TeamA=tokens[2];
-                    TeamB=tokens[3];
+                    TeamA=tokens[4];
+                    TeamB=tokens[5];
+                    std::vector<std::string> teamAplayers = TextUtils::tokenize(tokens[2],std::string("\t"),0,false);
+                    std::vector<std::string> teamBplayers = TextUtils::tokenize(tokens[3],std::string("\t"),0,false);
+                    MapPlayersData.clear();
+                    for (int k=0;k<teamAplayers.size();k++) MapPlayersData.insert ( std::pair<std::string,trackplayer>(teamAplayers[k],true) );
+                    for (int k=0;k<teamBplayers.size();k++) MapPlayersData.insert ( std::pair<std::string,trackplayer>(teamBplayers[k],false) );
+
                 }
             }
         }
 
-        if (tokens[0]==std::string("identTeam")) {
-            k1=2;
-            if (tokens[1]!=std::string("NOTEAM")) {
-                k1=4;
-                isTeamcoloridentified=true;
-                if (tokens[3]==std::string("TEAMA")) {
-                    std::istringstream iss( tokens[2] );
-                    iss >>    eTeamA;
-                    if (eTeamA == eRedTeam) eTeamB=eGreenTeam;
-                    else eTeamB=eRedTeam;
-                } else {
-                    std::istringstream iss( tokens[2] );
-                    iss >>  eTeamB;
-                    if (eTeamB == eRedTeam) eTeamA=eGreenTeam;
-                    else eTeamA=eRedTeam;
-                }
-
-            }
-        }
-
-        if (tokens[0]==std::string("spawn")) {
-            k1=2;
-            if (tokens[1]==std::string("NOTEAM")) {
-                k1=3;
-                int playerid;
-                std::istringstream iss( tokens[2] );
-                iss >>  playerid;
-                bz_kickUser ( playerid, "An official match is currently running", true );
-            }
-        }
 
         if (tokens[0]==std::string("entermatch")) {
             k1=1;
@@ -212,26 +216,138 @@ public:
         if (eventData->eventType == bz_eTickEvent)
         {
             if (!official || !isGameRunning) return;
-            int nb_Green = bz_getTeamCount(eGreenTeam);
-            int nb_Red = bz_getTeamCount(eRedTeam);
             bz_TickEventData *PlayerTickData = (bz_TickEventData *) eventData;
             double newtick=PlayerTickData->time;
-            if ( nb_Green > 1 && nb_Red >1 )   ruletime += newtick-lasttick;
+
+
+
+
+            bzAPIIntList *PlayerIndexList= bz_newIntList();
+            bz_getPlayerIndexList(PlayerIndexList);
+            bool isteamAred=false;
+            bool isteamBred=false;
+            bool isteamAgreen=false;
+            bool isteamBgreen=false;
+            int nb_red_pause = 0;
+            int nb_green_pause = 0;
+            int nb_red_NR = 0;
+            int nb_green_NR = 0;
+
+            for (int k=0;k<PlayerIndexList->size();k++)
+            {
+                bz_PlayerRecord *player = bz_getPlayerByIndex (PlayerIndexList->get(k));
+                std::map<std::string,trackplayer >::const_iterator it = MapPlayersData.find(player->callsign.c_str());
+                if ( it != MapPlayersData.end( ))
+                {
+                    /* check if team are mixed */
+                    if (!isTeamcoloridentified)
+                        if ((it->second.isTeamA) && (player->team == eRedTeam)) isteamAred=true;
+                        else if ((it->second.isTeamA) && (player->team == eGreenTeam)) isteamAgreen=true;
+                        else if ((!it->second.isTeamA) && (player->team == eRedTeam)) isteamBred=true;
+                        else isteamBgreen=true;
+
+                    /* check paused players */
+                    if ( it->second.startpausetime > 0 && (newtick - it->second.startpausetime > 5.0f) && it->second.eteam==eRedTeam)  nb_red_pause++;
+                    if ( it->second.startpausetime > 0 && (newtick - it->second.startpausetime > 5.0f) && it->second.eteam==eGreenTeam) nb_green_pause++;
+
+                    /* check NR players */
+                    if ( it->second.lastupdatetime > 0 && (newtick - it->second.lastupdatetime > 5.0f) && it->second.eteam==eRedTeam)  nb_red_NR++;
+                    if ( it->second.lastupdatetime > 0 && (newtick - it->second.lastupdatetime > 5.0f) && it->second.eteam==eGreenTeam) nb_green_NR++;
+
+                }
+                bz_freePlayerRecord(player);
+            }
+            
+            /* amount of time teams are mixed!!! */
+            if ((isteamBred && isteamAred) || (isteamBgreen && isteamAgreen))
+                Totaltime_mixed_team +=   newtick-lasttick;
+            else Totaltime_mixed_team =0.0f;
+
+
+            /* amount of time 1vs1 is forbiden!!! */
+            int nb_Green = bz_getTeamCount(eGreenTeam)-nb_green_NR-nb_green_pause ;
+            int nb_Red = bz_getTeamCount(eRedTeam)-nb_red_NR-nb_red_pause;
+            if ( nb_Green == 1 && nb_Red  == 1 )   Totaltime_1vs1 += newtick-lasttick;
+            else Totaltime_1vs1 =0.0f;
+
+
+            /* amount of time of uneven teams */
+            if ( nb_Green!= nb_Red )
+                Totaltime_even += newtick-lasttick;
+            else Totaltime_even =0.0f;
+
+            /* identify teams */
+            if (!isTeamcoloridentified && Totaltime_mixed_team==0.0f && Totaltime_1vs1==0.0f)
+            {
+                isTeamcoloridentified = true;
+                if (isteamAred)
+                {
+                    eTeamA=eRedTeam;
+                    eTeamB=eGreenTeam;
+                    bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"Green team is %s",TeamB.c_str());
+                    bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"Red team is %s",TeamA.c_str());
+                }
+                else
+                {
+                    eTeamA=eGreenTeam;
+                    eTeamB=eRedTeam;
+                    bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"Green team is %s",TeamA.c_str());
+                    bz_sendTextMessagef(BZ_SERVER,BZ_ALLUSERS,"Red team is %s",TeamB.c_str());
+                }
+            }
             lasttick = newtick;
+
+            /* check mixed team */
+            if (Totaltime_mixed_team > 5.0f)  bz_pauseCountdown ( "Teams should not be mixed !!");
+            /* check uneven team */
+            else if (Totaltime_even > 5.0f) bz_pauseCountdown ("Teams should be even !!");
+            /* check 1vs1 */
+            else if (Totaltime_1vs1 > 5.0f) bz_pauseCountdown ( "Teams should not be in 1vs1 configuration !!");
+
             return;
         }
-        if (eventData->eventType == bz_ePlayerSpawnEvent)
+
+        if (eventData->eventType == bz_ePlayerJoinEvent)
         {
-            if (!official) return;
-            bz_PlayerSpawnEventData *PlayerSpawnData = (bz_PlayerSpawnEventData *) eventData;
-            int playerID = PlayerSpawnData->playerID;
+            if (!official || !(bz_isCountDownActive() || bz_isCountDownInProgress())) return;
+            bz_PlayerJoinPartEventData *PlayerJoinData = (bz_PlayerJoinPartEventData *) eventData;
+            int playerID = PlayerJoinData->playerID;
             bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
-            bz_addURLJob(URL.c_str(), &myURL, ("&action=spawn&teama="+encryptdata(TeamA)
-                                               +"&teamb=" + encryptdata(TeamB)
-                                               +"&player="+ encryptdata(player->callsign)
-                                               +"&playerid="+encryptdata(playerID)).c_str());
+
+            // kick all the players that doesnt belong in one of the two teams
+            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
+            if (player->team != eObservers)
+            {
+                if  (it == MapPlayersData.end( ))  bz_kickUser ( player->playerID, "An official match is currently running. Please, join as observer.", true );
+                else if (!isTeamcoloridentified)  it->second.eteam  = player->team;
+                else if (eTeamA==eRedTeam)
+                {
+                    bz_sendTextMessagef(BZ_SERVER,player->playerID,"Green team is %s",TeamB.c_str());
+                    bz_sendTextMessagef(BZ_SERVER,player->playerID,"Red team is %s",TeamA.c_str());
+                    bz_kickUser ( player->playerID, "Please, the other team or go to observers.", true );
+                }
+                else
+                {
+                    bz_sendTextMessagef(BZ_SERVER,player->playerID,"Green team is %s",TeamA.c_str());
+                    bz_sendTextMessagef(BZ_SERVER,player->playerID,"Red team is %s",TeamB.c_str());
+                    bz_kickUser ( player->playerID, "Please, the other team or go to observers.", true );
+                }
+            }
             bz_freePlayerRecord(player);
-            return;
+
+        }
+
+        if (eventData->eventType == bz_ePlayerPartEvent)
+        {
+            if (!official || !(bz_isCountDownActive() || bz_isCountDownInProgress())) return;
+            bz_PlayerJoinPartEventData *PlayerPartData = (bz_PlayerJoinPartEventData *) eventData;
+            int playerID = PlayerPartData->playerID;
+            bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
+
+            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
+            if ( it != MapPlayersData.end( ))   it->second.part();
+
+            bz_freePlayerRecord(player);
         }
 
         if (eventData->eventType == bz_eSlashCommandEvent )
@@ -270,22 +386,32 @@ public:
             // save currently set timelimit to avoid collisions with other plugins that
             // manipulate the timelimit
             isGameRunning=true;
-            ruletime=0.0f;
             pauseTotalTime = 0.0f;
             saveTimeLimit = bz_getTimeLimit();
             matchStartTime = bz_getCurrentTime();
             lasttick=matchStartTime;
+            Totaltime_1vs1=0.0f;
+            Totaltime_mixed_team=0.0f;
+            Totaltime_even=0.0f;
 
+            // kick all the players that doesnt belong in one of the two teams
+            bzAPIIntList *PlayerIndexList= bz_newIntList();
+            bz_getPlayerIndexList(PlayerIndexList);
+            for (int k=0;k<PlayerIndexList->size();k++) {
+                bz_PlayerRecord *player = bz_getPlayerByIndex (PlayerIndexList->get(k));
+                if ((player->team != eObservers) && (MapPlayersData.find(player->callsign.c_str()) == MapPlayersData.end( )))
+                    bz_kickUser ( player->playerID, "An official match is currently running. Please, join as observer.", true );
+                bz_freePlayerRecord(player);
+            }
         }
 
         if (eventData->eventType == bz_eGameEndEvent)
         {
-            if (!official) return;
+            if (!official||!isGameRunning) return;
             isGameRunning=false;
             matchEndTime = bz_getCurrentTime();
             double newTimeElapsed = (matchEndTime - matchStartTime);
             float timeLeft = saveTimeLimit - newTimeElapsed - 1 + pauseTotalTime;
-            double TotalRuleTime = ruletime - pauseTotalTime;
 
             bz_debugMessagef(2, "DEBUG:: newTimeElapsed => %f timeLeft => %f",newTimeElapsed, timeLeft);
 
@@ -298,30 +424,21 @@ public:
                 TeamB="";
                 return;
             }
-            if (TotalRuleTime < 0.9*saveTimeLimit) {
-                bz_sendTextMessage(BZ_SERVER,BZ_ALLUSERS,"The rules of league have not been sufficiently satisfied. Official is canceled...");
-                official = false;
-                isTeamcoloridentified=false;
-                isofficialrequested=false;
-                TeamA="";
-                TeamB="";
-                return;
-            }
 
-            if (!isTeamcoloridentified) {
-                scoreA = 0;
-                scoreB = 0;
-            }
-            else {
+            if (isTeamcoloridentified)
+            {
                 scoreA = bz_getTeamLosses(convertTeam (eTeamB));
                 scoreB=  bz_getTeamLosses(convertTeam (eTeamA));
+
+                bz_addURLJob(URL.c_str(), &myURL, ("&action=entermatch&teama="+encryptdata(TeamA)
+                                                   +"&teamb=" + encryptdata(TeamB)
+                                                   +"&scorea="+ encryptdata(scoreA)
+                                                   +"&scoreb="+ encryptdata(scoreB)
+                                                   +"&hash=" + encryptdata(HASH)
+                                                   +"&mlen="+encryptdata((int)saveTimeLimit/60)).c_str());
             }
-            bz_addURLJob(URL.c_str(), &myURL, ("&action=entermatch&teama="+encryptdata(TeamA)
-                                               +"&teamb=" + encryptdata(TeamB)
-                                               +"&scorea="+ encryptdata(scoreA)
-                                               +"&scoreb="+ encryptdata(scoreB)
-                                               +"&hash=" + encryptdata(HASH)
-                                               +"&mlen="+encryptdata((int)saveTimeLimit/60)).c_str());
+            else bz_sendTextMessage(BZ_SERVER,BZ_ALLUSERS,"Teams were not identified so match has not been entered :(");
+
             official = false;
             isTeamcoloridentified=false;
             isofficialrequested=false;
@@ -330,30 +447,51 @@ public:
             return;
         }
 
-        if ((eventData->eventType == bz_eCaptureEvent) && (!isTeamcoloridentified))
+
+
+        if (eventData->eventType == bz_ePlayerUpdateEvent)
         {
-            bz_CTFCaptureEventData *CTFCaptureData = (bz_CTFCaptureEventData *) eventData;
-            bz_PlayerRecord *playercapping = bz_getPlayerByIndex( CTFCaptureData->playerCapping);
-            bz_eTeamType teamplayercapping = playercapping->team;
+            if (!official||!isGameRunning) return;
 
-            bz_addURLJob(URL.c_str(), &myURL,
-                         ("&action=identTeam&player="+encryptdata(playercapping->callsign)
-                          +"&playerteam=" + encryptdata(teamplayercapping)
-                          +"&teama="+encryptdata(TeamA)).c_str());
-            bz_freePlayerRecord(playercapping);
+            bz_PlayerUpdateEventData *PlayerUpdateEventData = (bz_PlayerUpdateEventData *) eventData;
+            int playerID = PlayerUpdateEventData->playerID;
+            bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
+
+            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
+            if ( it != MapPlayersData.end( ) && player->team != eObservers)   it->second.lastupdatetime = PlayerUpdateEventData->time;
+            bz_freePlayerRecord(player);
             return;
-
         }
+
+
+        if (eventData->eventType == bz_ePlayerPausedEvent)
+        {
+            if (!official||!isGameRunning) return;
+
+            bz_PlayerPausedEventData *PlayerPausedEventData = (bz_PlayerPausedEventData *) eventData;
+            int playerID = PlayerPausedEventData->player;
+            bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
+
+            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
+            if ( it != MapPlayersData.end( ))
+            {
+                if (PlayerPausedEventData->pause) it->second.startpausetime = PlayerPausedEventData->time;
+                else it->second.startpausetime = -1.0f;
+            }
+            bz_freePlayerRecord(player);
+            return;
+        }
+
         return;
     }
 
-   virtual bool handle ( int playerID, bzApiString command, bzApiString /*message*/, bzAPIStringList* /*params*/ ) {
+    virtual bool handle ( int playerID, bzApiString command, bzApiString /*message*/, bzAPIStringList* /*params*/ ) {
         bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
         if (!player)
             return true;
 
-        if ((!player->hasPerm("AUTOREPORT")) || (player->team == eObservers)) {
-            bz_sendTextMessage(BZ_SERVER,playerID,"Only players can use that command.");
+        if ((!player->hasPerm("AUTOREPORT"))) {
+            bz_sendTextMessage(BZ_SERVER,playerID,"Only allowed players can use that command.");
             bz_freePlayerRecord(player);
             return true;
         }
@@ -406,7 +544,7 @@ public:
             bz_sendTextMessage(BZ_SERVER,playerID,(std::string("There is no nothing to be canceled")).c_str());
             bz_freePlayerRecord(player);
             return true;
-        }        
+        }
 
 
         if (command == "ladder") {
@@ -433,12 +571,15 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
 {
     std::vector<std::string> tokens = TextUtils::tokenize(commandLine,std::string(","),0,false);
 
+
     isloaded=false;
     if (tokens.size() == 2) {
         URL = tokens[0];
         HASH = tokens[1];
-        bz_registerEvent(bz_eCaptureEvent,&autoReport);
-        bz_registerEvent(bz_ePlayerSpawnEvent,&autoReport);
+        bz_registerEvent(bz_ePlayerJoinEvent,&autoReport);
+        bz_registerEvent(bz_ePlayerPartEvent,&autoReport);
+        bz_registerEvent(bz_ePlayerPausedEvent,&autoReport);
+        bz_registerEvent(bz_ePlayerUpdateEvent,&autoReport);
         bz_registerEvent(bz_eGameStartEvent,&autoReport);
         bz_registerEvent(bz_eSlashCommandEvent,&autoReport);
         bz_registerEvent(bz_eGameEndEvent,&autoReport);
@@ -462,9 +603,11 @@ BZF_PLUGIN_CALL int bz_Unload (void)
         bz_removeCustomSlashCommand ( "online" );
         bz_removeEvent(bz_eTickEvent,&autoReport);
         bz_removeEvent(bz_eGameStartEvent,&autoReport);
-        bz_removeEvent(bz_ePlayerSpawnEvent,&autoReport);
+        bz_removeEvent(bz_ePlayerJoinEvent,&autoReport);
+        bz_removeEvent(bz_ePlayerPartEvent,&autoReport);
+        bz_removeEvent(bz_ePlayerPausedEvent,&autoReport);
+        bz_removeEvent(bz_ePlayerUpdateEvent,&autoReport);
         bz_removeEvent(bz_eGameEndEvent,&autoReport);
-        bz_removeEvent(bz_eCaptureEvent,&autoReport);
         bz_removeEvent(bz_eSlashCommandEvent,&autoReport);
         bz_debugMessage(4, "autoReport Plugin Unloaded");
     }

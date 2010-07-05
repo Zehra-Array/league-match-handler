@@ -35,9 +35,17 @@ if ($action == "challenger") {
         echo "NOTEAM\n$data does not belong to any team and tried to declare a match ?!";
         return;
     }
-    else  echo "TEAMFOUND\n$teama\n".$obj->teamname."\n$data has  declared that the team ".$obj->teamname." will play an official match too.
+    else  
+    {
+         echo "TEAMFOUND\n";
+         $res_Team= mysql_query('SELECT l_player.callsign FROM (l_player, l_team) WHERE l_player.team=l_team.id AND l_team.name="'.mysql_real_escape_string($teama).'"');
+         while ($obj_Team = mysql_fetch_object($res_Team)) echo "$obj_Team->callsign\t";
+         echo "\n";
+         $res_Team= mysql_query("SELECT l_player.callsign FROM (l_player, l_team) WHERE l_player.team=l_team.id AND l_team.name=\"$obj->teamname\"");
+         while ($obj_Team = mysql_fetch_object($res_Team)) echo "$obj_Team->callsign\t";
+         echo "\n$teama\n".$obj->teamname."\n$data has  declared that the team ".$obj->teamname." will play an official match too.
         \nThe match will be $teama versus ".$obj->teamname."\nThis match can still be canceled by using command /cancel";
-
+    }
     return;
 }
 
@@ -61,59 +69,6 @@ if ($action == "firstdeclare") {
     return;
 }
 
-if ($action == "identTeam") {
-    echo "identTeam\n";
-    $player=$_POST['player'];
-    $playerteam=$_POST['playerteam'];
-    $teama=$_POST['teama'];
-
-    if ($player=="" || $playerteam=="" ||$teama=="") {
-        echo "NOTEAM";
-        return;
-    }
-    $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
-                       FROM l_player P
-                       JOIN l_team T ON P.team = T.id
-                       WHERE P.callsign = \"".mysql_real_escape_string($_POST['player'])."\"");
-    $obj = mysql_fetch_object($res);
-    if ($obj->team_id == 0 )  {
-        echo "NOTEAM";
-        return;
-    }
-    else  {
-        if ($teama == $obj->teamname) $teamnum="TEAMA";
-        else $teamnum="TEAMB";
-        echo "TEAMFOUND\n$playerteam\n$teamnum";
-    }
-    return;
-}
-
-if ($action == "spawn") {
-    echo "spawn\n";
-    $player=$_POST['player'];
-    $teamb=$_POST['teamb'];
-    $teama=$_POST['teama'];
-    $playerid=$_POST['playerid'];
-    if ($player=="" || $teamb=="" ||$teama=="" || $playerid=="" ) {
-        echo "ERROR";
-        return;
-    }
-    $res = mysql_query("SELECT T.id team_id, T.name teamname, T.score score
-                       FROM l_player P
-                       JOIN l_team T ON P.team = T.id
-                       WHERE P.callsign = \"".mysql_real_escape_string($_POST['player'])."\"");
-    $obj = mysql_fetch_object($res);
-    if ($obj->team_id == 0 )  {
-        echo "NOTEAM\n$playerid";
-        return;
-    }
-    if ($teama != $obj->teamname  && $teamb != $obj->teamname) {
-        echo "NOTEAM\n$playerid";
-        return;
-    }
-    echo "TEAMOK";
-    return;
-}
 
 if ($action == "entermatch") {
     echo "entermatch\n";
@@ -209,7 +164,7 @@ if ($action == "online") {
             }
             $res_team = mysql_query("SELECT l_team.id,l_team.name FROM `l_team`");
             $numonline=0;
-            printf("\n\n\n\n");
+            printf(" \n \n \n \n");
             while ($obj_team = mysql_fetch_object($res_team))
             {
                 $res = mysql_query("SELECT l_player.callsign FROM `l_player` WHERE l_player.team=$obj_team->id");
@@ -224,7 +179,7 @@ if ($action == "online") {
                 }
                 if ($numonline == 0) printf("No online player :(\n");
             }
-            printf("\n\n\n");
+            printf(" \n \n \n");
             
         }
     }
