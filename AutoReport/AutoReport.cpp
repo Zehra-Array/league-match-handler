@@ -59,6 +59,15 @@ public:
 
 std::map <std::string, trackplayer> MapPlayersData;
 
+std::string tolower(const std::string& s)
+{
+	std::string trans = s;
+
+	for (std::string::iterator i=trans.begin(), end=trans.end(); i!=end; ++i)
+		*i = ::tolower(*i);
+	return trans;
+}
+
 
 class MyURLHandler: public bz_URLHandler
 {
@@ -102,8 +111,8 @@ public:
                     std::vector<std::string> teamAplayers = TextUtils::tokenize(tokens[2],std::string("\t"),0,false);
                     std::vector<std::string> teamBplayers = TextUtils::tokenize(tokens[3],std::string("\t"),0,false);
                     MapPlayersData.clear();
-                    for (int k=0;k<teamAplayers.size();k++) MapPlayersData.insert ( std::pair<std::string,trackplayer>(teamAplayers[k],true) );
-                    for (int k=0;k<teamBplayers.size();k++) MapPlayersData.insert ( std::pair<std::string,trackplayer>(teamBplayers[k],false) );
+                    for (int k=0;k<teamAplayers.size();k++) MapPlayersData.insert ( std::pair<std::string,trackplayer>(tolower(teamAplayers[k]),true) );
+                    for (int k=0;k<teamBplayers.size();k++) MapPlayersData.insert ( std::pair<std::string,trackplayer>(tolower(teamBplayers[k]),false) );
 
                 }
             }
@@ -224,7 +233,7 @@ public:
             for (int k=0;k<PlayerIndexList->size();k++)
             {
                 bz_PlayerRecord *player = bz_getPlayerByIndex (PlayerIndexList->get(k));
-                std::map<std::string,trackplayer >::const_iterator it = MapPlayersData.find(player->callsign.c_str());
+                std::map<std::string,trackplayer >::const_iterator it = MapPlayersData.find(tolower(player->callsign.c_str()));
                 if ( it != MapPlayersData.end( ))
                 {
                     /* check if team are mixed */
@@ -258,7 +267,7 @@ public:
             int nb_Red = bz_getTeamCount(eRedTeam)-nb_red_NR-nb_red_pause;
 
 
-            if ( nb_Green <= 1 && nb_Red  <= 1 )   Totaltime_1vs1 += newtick-lasttick;
+            if ( nb_Green <= 0 && nb_Red  <= 0 )   Totaltime_1vs1 += newtick-lasttick;
             else Totaltime_1vs1 =0.0f;
 
 
@@ -323,40 +332,31 @@ public:
             return;
         }
 
-        if (eventData->eventType == bz_ePlayerJoinEvent)
+        if (eventData->eventType == bz_eGetAutoTeamEvent)
         {
             if (!official || !(bz_isCountDownActive() || bz_isCountDownInProgress())) return;
-            bz_PlayerJoinPartEventData *PlayerJoinData = (bz_PlayerJoinPartEventData *) eventData;
-            int playerID = PlayerJoinData->playerID;
-            bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
-
-            // kick all the players that doesnt belong in one of the two teams
-            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
-            if (player->team != eObservers)
+            bz_GetAutoTeamEventData *GetAutoTeamEventData = (bz_GetAutoTeamEventData *) eventData;
+            int playerID = GetAutoTeamEventData->playeID;           
+            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(tolower(GetAutoTeamEventData->callsign.c_str()));
+            if (GetAutoTeamEventData->team != eObservers)
             {
-                if  (it == MapPlayersData.end( ))  bz_kickUser ( player->playerID, " An official match is currently running. Please, join as observer.", true );
-                else if (!isTeamcoloridentified)  it->second.eteam  = player->team;
-                else if (eTeamA==eRedTeam)
+                if  (it == MapPlayersData.end( ))   GetAutoTeamEventData->team = eObservers;
+                else 
                 {
-                    if (( it->second.isTeamA && player->team == eGreenTeam) || (!it->second.isTeamA && player->team == eRedTeam) )
-                    {
-                        bz_sendTextMessagef(BZ_SERVER,player->playerID,"Green team is %s",TeamB.c_str());
-                        bz_sendTextMessagef(BZ_SERVER,player->playerID,"Red team is %s",TeamA.c_str());
-                        bz_kickUser ( player->playerID, " Please, join green team or go to the observer room", true );
-                    }
-                }
-                else if (eTeamA==eGreenTeam)
-                {
-                    if (( !it->second.isTeamA && player->team == eGreenTeam) || (it->second.isTeamA && player->team == eRedTeam) )
-                    {
-                        bz_sendTextMessagef(BZ_SERVER,player->playerID,"Green team is %s",TeamB.c_str());
-                        bz_sendTextMessagef(BZ_SERVER,player->playerID,"Red team is %s",TeamA.c_str());
-                        bz_kickUser ( player->playerID, " Please, join red team or go to the observer room", true );
-                    }
-                }
-                it->second.eteam  = player->team;
-            }
-            bz_freePlayerRecord(player);
+                     if (!isTeamcoloridentified)  it->second.eteam  = GetAutoTeamEventData->team;
+                     else if (eTeamA==eRedTeam)
+                     {
+                        if ( it->second.isTeamA && GetAutoTeamEventData->team == eGreenTeam)  GetAutoTeamEventData->team = eRedTeam;
+                        else if (!it->second.isTeamA && GetAutoTeamEventData->team == eRedTeam) GetAutoTeamEventData->team = eGreenTeam;
+                     }
+                     else if (eTeamA==eGreenTeam)
+                     {
+                        if( !it->second.isTeamA && GetAutoTeamEventData->team == eGreenTeam) GetAutoTeamEventData->team = eRedTeam; 
+                        else if  (it->second.isTeamA && GetAutoTeamEventData->team == eRedTeam) GetAutoTeamEventData->team = eGreenTeam;
+                     }
+                     it->second.eteam  = GetAutoTeamEventData->team;
+                 }
+             }
 
         }
 
@@ -364,13 +364,8 @@ public:
         {
             if (!official || !(bz_isCountDownActive() || bz_isCountDownInProgress())) return;
             bz_PlayerJoinPartEventData *PlayerPartData = (bz_PlayerJoinPartEventData *) eventData;
-            int playerID = PlayerPartData->playerID;
-            bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
-
-            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
+            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(tolower(PlayerPartData->callsign.c_str()));
             if ( it != MapPlayersData.end( ))   it->second.part();
-
-            bz_freePlayerRecord(player);
         }
 
         if (eventData->eventType == bz_eSlashCommandEvent )
@@ -419,7 +414,7 @@ public:
             for (int k=0;k<PlayerIndexList->size();k++) {
                 bz_PlayerRecord *player = bz_getPlayerByIndex (PlayerIndexList->get(k));
                 // kick all the players that doesnt belong in one of the two teams
-                std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
+                std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(tolower(player->callsign.c_str()));
                 if (player->team != eObservers)
                 {
                     if  (it == MapPlayersData.end( ))  bz_kickUser ( player->playerID, " An official match is currently running. Please, join as observer.", true );
@@ -466,7 +461,7 @@ public:
             int playerID = PlayerUpdateEventData->playerID;
             bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
 
-            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
+            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(tolower(player->callsign.c_str()));
             if ( it != MapPlayersData.end( ) && player->team != eObservers)   it->second.lastupdatetime = PlayerUpdateEventData->time;
             bz_freePlayerRecord(player);
             return;
@@ -481,7 +476,7 @@ public:
             int playerID = PlayerPausedEventData->player;
             bz_PlayerRecord *player = bz_getPlayerByIndex(playerID);
 
-            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(player->callsign.c_str());
+            std::map<std::string,trackplayer >::iterator it = MapPlayersData.find(tolower(player->callsign.c_str()));
             if ( it != MapPlayersData.end( ))
             {
                 if (PlayerPausedEventData->pause) it->second.ispaused = true;
@@ -592,8 +587,9 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
     if (tokens.size() == 2) {
         URL = tokens[0];
         HASH = tokens[1];
-        bz_registerEvent(bz_ePlayerJoinEvent,&autoReport);
+//        bz_registerEvent(bz_ePlayerJoinEvent,&autoReport);
         bz_registerEvent(bz_ePlayerPartEvent,&autoReport);
+        bz_registerEvent(bz_eGetAutoTeamEvent,&autoReport);
         bz_registerEvent(bz_ePlayerPausedEvent,&autoReport);
         bz_registerEvent(bz_ePlayerUpdateEvent,&autoReport);
         bz_registerEvent(bz_eGameStartEvent,&autoReport);
@@ -619,7 +615,8 @@ BZF_PLUGIN_CALL int bz_Unload (void)
         bz_removeCustomSlashCommand ( "online" );
         bz_removeEvent(bz_eTickEvent,&autoReport);
         bz_removeEvent(bz_eGameStartEvent,&autoReport);
-        bz_removeEvent(bz_ePlayerJoinEvent,&autoReport);
+//        bz_removeEvent(bz_ePlayerJoinEvent,&autoReport);
+        bz_removeEvent(bz_eGetAutoTeamEvent,&autoReport);
         bz_removeEvent(bz_ePlayerPartEvent,&autoReport);
         bz_removeEvent(bz_ePlayerPausedEvent,&autoReport);
         bz_removeEvent(bz_ePlayerUpdateEvent,&autoReport);

@@ -158,7 +158,7 @@ if ($action == "online") {
             foreach($lines as $record)
             {
                 $val=explode("\t", $record);
-                $tab->name[$ind]=$val[0];
+                $tab->name[$ind]=strtolower($val[0]);
                 $tab->color[$ind]=$val[1];
                 $tab->server[$ind++]=$val[2].":".$val[3];
             }
@@ -170,7 +170,7 @@ if ($action == "online") {
                 $res = mysql_query("SELECT l_player.callsign FROM `l_player` WHERE l_player.team=$obj_team->id");
                 while ($obj = mysql_fetch_object($res))
                 {
-                    $index = array_keys($tab->name, $obj->callsign);
+                    $index = array_keys($tab->name, strtolower($obj->callsign));
                     foreach ($index as $key)
                     {
                         printf("%-20s %-20s %-9s %s\n",$obj_team->name, $obj->callsign, $tab->color[$key], $tab->server[$key]);
