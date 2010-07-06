@@ -267,7 +267,7 @@ public:
             int nb_Red = bz_getTeamCount(eRedTeam)-nb_red_NR-nb_red_pause;
 
 
-            if ( nb_Green <= 0 && nb_Red  <= 0 )   Totaltime_1vs1 += newtick-lasttick;
+            if ( nb_Green <= 1 && nb_Red  <= 1 )   Totaltime_1vs1 += newtick-lasttick;
             else Totaltime_1vs1 =0.0f;
 
 
