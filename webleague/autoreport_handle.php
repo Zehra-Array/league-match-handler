@@ -150,7 +150,7 @@ if ($action == "online") {
     if (($content=file_get_contents('http://bzstats.strayer.de/stuff/ShowDown2.php'))!==false) {
         $lines=explode("\n",$content);
         if (count($lines)<2) {
-            printf("Currently, no registered league player is online\n");
+            printf("Currently, no data has been received from strayer\n");
         }
         else {
             $lines=explode("\n",$content,-1);
@@ -164,7 +164,7 @@ if ($action == "online") {
             }
             $res_team = mysql_query("SELECT l_team.id,l_team.name FROM `l_team`");
             $numonline=0;
-            printf(" \n \n \n \n");
+            printf(" \n");
             while ($obj_team = mysql_fetch_object($res_team))
             {
                 $res = mysql_query("SELECT l_player.callsign FROM `l_player` WHERE l_player.team=$obj_team->id");
@@ -177,9 +177,9 @@ if ($action == "online") {
                         $numonline++;
                     }
                 }
-                if ($numonline == 0) printf("No online player :(\n");
             }
-            printf(" \n \n \n");
+            if ($numonline == 0) printf("No online player :(\n");
+            printf(" \n");
             
         }
     }
