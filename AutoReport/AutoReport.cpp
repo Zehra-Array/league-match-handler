@@ -587,7 +587,6 @@ BZF_PLUGIN_CALL int bz_Load (const char* commandLine)
     if (tokens.size() == 2) {
         URL = tokens[0];
         HASH = tokens[1];
-//        bz_registerEvent(bz_ePlayerJoinEvent,&autoReport);
         bz_registerEvent(bz_ePlayerPartEvent,&autoReport);
         bz_registerEvent(bz_eGetAutoTeamEvent,&autoReport);
         bz_registerEvent(bz_ePlayerPausedEvent,&autoReport);
@@ -615,7 +614,6 @@ BZF_PLUGIN_CALL int bz_Unload (void)
         bz_removeCustomSlashCommand ( "online" );
         bz_removeEvent(bz_eTickEvent,&autoReport);
         bz_removeEvent(bz_eGameStartEvent,&autoReport);
-//        bz_removeEvent(bz_ePlayerJoinEvent,&autoReport);
         bz_removeEvent(bz_eGetAutoTeamEvent,&autoReport);
         bz_removeEvent(bz_ePlayerPartEvent,&autoReport);
         bz_removeEvent(bz_ePlayerPausedEvent,&autoReport);
